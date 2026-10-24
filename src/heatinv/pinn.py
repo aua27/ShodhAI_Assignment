@@ -197,6 +197,7 @@ class Trainer:
         self.step = 0
         self.history = []
         self.events = []
+        self.inject_nan_at = None  # test hook used by the divergence-recovery check
         self._make_optim(cfg.lr, cfg.lr_phys)
         self._resample()
 
@@ -343,6 +344,9 @@ class Trainer:
             if self.step % c.resample_every == 0 and self.step > 0:
                 self._resample()
             L = self.losses()
+            if self.inject_nan_at is not None and self.step == self.inject_nan_at:
+                self.inject_nan_at = None  # test hook: one-off simulated blow-up
+                L["total"] = L["total"] * float("nan")
             if not torch.isfinite(L["total"]):
                 # Numerical divergence: record it, roll back to the last good state, halve the lr.
                 self.events.append(
@@ -358,7 +362,11 @@ class Trainer:
                         {"step": self.step, "event": "diverged", "action": "abort"}
                     )
                     return self._result(t0, failed="diverged")
+                events = (
+                    self.events
+                )  # the rollback must not erase the record of the divergence
                 self.load_state(copy.deepcopy(last_good))
+                self.events = events
                 self._make_optim(c.lr * lr_scale, c.lr_phys * lr_scale)
                 continue
             self.opt.zero_grad()

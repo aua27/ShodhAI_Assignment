@@ -1,0 +1,26 @@
+# Stage 4 diagnostic rules -- FROZEN. Committed before the sealed diagnosis bundle is analysed
+# and before its fault label is read. Changing anything here after that point invalidates the
+# blind test; any later change must be a new, separately committed version.
+version: 1
+fit_experiments: [E1, E2, E3, E4]   # every labelled experiment in the suspect bundle
+chi2_red_misfit: 1.3      # base model misfit beyond the stated noise -> "observation: misfit"
+lrt_threshold: 25.0       # chi^2 drop needed to support a 1-parameter fault hypothesis (~5 sigma)
+min_margin: 10.0          # best hypothesis must beat the runner-up by this chi^2 to be named alone
+hypotheses:
+  sensor_drift:           # one extra parameter: linear-in-time drift of ONE sensor (each tested)
+    rate_bound: 0.5
+  heat_source:            # one extra parameter: amplitude Q of a Gaussian source (centre scanned)
+    centres: [0.25, 0.5, 0.75]
+    width: 0.15
+    q_bound: 3.0
+  boundary_input_error:   # one extra parameter: constant bias of the recorded left input g(t)
+    bias_bound: 0.3
+supporting_checks:
+  residual_trend_z: 4.0   # per-sensor residual-vs-time slope z-score reported as an observation
+  window_split_t: 0.5     # refit on t<=0.5 and t>0.5; parameter disagreement z reported
+decision:
+  - "no hypothesis passes lrt AND chi2_red <= chi2_red_misfit -> no_fault_detected (status ok)"
+  - "best passes lrt AND margin >= min_margin                  -> suspected:<kind> (status weak_evidence)"
+  - "best passes lrt AND margin <  min_margin                  -> ambiguous:<kinds> (status weak_evidence)"
+  - "no hypothesis passes lrt AND chi2_red > chi2_red_misfit   -> unexplained_misfit (status weak_evidence)"
+  - "a named hypothesis is a CAUSAL HYPOTHESIS consistent with the data, never an observed fact"
