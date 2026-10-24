@@ -115,6 +115,21 @@ def _fit_aug(exps, ref, cfg, base, kind, arg, bound):
     }
 
 
+def decide(ranked, misfit: bool, rules) -> str:
+    """Frozen decision rule (configs/diagnosis_rules.yaml). `ranked`: best test per fault kind,
+    sorted by delta_chi2 descending."""
+    lrt, margin = rules["lrt_threshold"], rules["min_margin"]
+    top = ranked[0]
+    second = ranked[1]["delta_chi2"] if len(ranked) > 1 else 0.0
+    if top["delta_chi2"] < lrt:
+        return "unexplained_misfit" if misfit else "no_fault_detected"
+    if top["delta_chi2"] - second >= margin:
+        return f"suspected:{top['kind']}"
+    return "ambiguous:" + "|".join(
+        t["kind"] for t in ranked if top["delta_chi2"] - t["delta_chi2"] < margin
+    )
+
+
 def _residual_table(res, exps, ref, cfg):
     prob = Problem(exps, ref, cfg)
     n_p = len(prob.phys_names)
@@ -225,20 +240,8 @@ def diagnose(bundle, rules: dict, quick=False) -> dict:
         ):
             best_by_kind[t["kind"]] = t
     ranked = sorted(best_by_kind.values(), key=lambda t: -t["delta_chi2"])
-    top, second = ranked[0], ranked[1]
-    lrt, margin = rules["lrt_threshold"], rules["min_margin"]
-    if top["delta_chi2"] < lrt:
-        verdict = (
-            "unexplained_misfit"
-            if observations["misfit_beyond_noise"]
-            else "no_fault_detected"
-        )
-    elif top["delta_chi2"] - second["delta_chi2"] >= margin:
-        verdict = f"suspected:{top['kind']}"
-    else:
-        verdict = "ambiguous:" + "|".join(
-            t["kind"] for t in ranked if top["delta_chi2"] - t["delta_chi2"] < margin
-        )
+    top = ranked[0]
+    verdict = decide(ranked, observations["misfit_beyond_noise"], rules)
     status = "ok" if verdict == "no_fault_detected" else "weak_evidence"
     return {
         "verdict": verdict,
@@ -329,14 +332,22 @@ def validate_rules(
 
 
 SWEEP = {
-    "sensor_drift": [{"kind": "drift", "sensor": "S4", "rate": r} for r in (0.01, 0.02, 0.04)]
+    "sensor_drift": [
+        {"kind": "drift", "sensor": "S4", "rate": r} for r in (0.01, 0.02, 0.04)
+    ]
     + [{"kind": "drift", "sensor": "S1", "rate": 0.03}],  # S1 = reference sensor
-    "heat_source": [{"kind": "heat_source", "Q": q, "xc": 0.6, "w": 0.1} for q in (0.03, 0.08, 0.2)],
-    "boundary_input_error": [{"kind": "boundary_error", "bias": b} for b in (0.005, 0.01, 0.02, 0.04)],
+    "heat_source": [
+        {"kind": "heat_source", "Q": q, "xc": 0.6, "w": 0.1} for q in (0.03, 0.08, 0.2)
+    ],
+    "boundary_input_error": [
+        {"kind": "boundary_error", "bias": b} for b in (0.005, 0.01, 0.02, 0.04)
+    ],
 }
 
 
-def sensitivity_sweep(out: Path, rules_path="configs/diagnosis_rules.yaml", replicates=2):
+def sensitivity_sweep(
+    out: Path, rules_path="configs/diagnosis_rules.yaml", replicates=2
+):
     """Where do the frozen rules stop detecting? Smaller faults than validate_rules, known truth."""
     from .synth import SynthSpec, generate, write_bundle
 
@@ -348,14 +359,27 @@ def sensitivity_sweep(out: Path, rules_path="configs/diagnosis_rules.yaml", repl
                 seed = 8000 + len(rows)
                 tables, man, truth = generate(SynthSpec(seed=seed, fault=f))
                 d = Path(out) / "data" / f"sweep_{seed}"
-                write_bundle(tables, man, truth, d, Path(out) / "data" / f"sweep_{seed}_truth.json")
+                write_bundle(
+                    tables,
+                    man,
+                    truth,
+                    d,
+                    Path(out) / "data" / f"sweep_{seed}_truth.json",
+                )
                 r = diagnose(load_bundle(d), rules, quick=True)
                 size = {k: v for k, v in f.items() if k not in ("kind", "xc", "w")}
-                rows.append({"true_fault": kind, **size, "replicate": i, "verdict": r["verdict"],
-                             "correct": r["verdict"] == f"suspected:{kind}",
-                             "top_delta_chi2": r["top_hypothesis"]["delta_chi2"],
-                             "chi2_red_base": r["observations"]["chi2_red_base"],
-                             "base_params": r["observations"]["base_params"]})
+                rows.append(
+                    {
+                        "true_fault": kind,
+                        **size,
+                        "replicate": i,
+                        "verdict": r["verdict"],
+                        "correct": r["verdict"] == f"suspected:{kind}",
+                        "top_delta_chi2": r["top_hypothesis"]["delta_chi2"],
+                        "chi2_red_base": r["observations"]["chi2_red_base"],
+                        "base_params": r["observations"]["base_params"],
+                    }
+                )
                 print({k: v for k, v in rows[-1].items() if k != "base_params"})
     df = pd.DataFrame(rows)
     df.to_csv(Path(out) / "sensitivity_sweep.csv", index=False)

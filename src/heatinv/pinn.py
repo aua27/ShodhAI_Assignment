@@ -11,7 +11,7 @@ a constraint violated by about one noise level costs about as much as one misfit
             flux = a(x) * u_x;  d(flux)/dx via autograd -> includes a'(x) u_x automatically
     L_ic  = mean( (u(x,0) - f(x))^2 ) / sigma_ref^2
     L_bc  = mean( (u(0,t) - g(t))^2 ) / sigma_ref^2 + mean( (a(1) u_x(1,t) + h (u(1,t) - Ta(t)))^2 ) / sigma_ref^2
-Total = w_obs L_obs + w_pde L_pde + w_ic L_ic + w_bc L_bc (default weights 1; ablated in Stage 3).
+Total = w_obs L_obs + w_pde L_pde + w_ic L_ic + w_bc L_bc (default weights 1; w_bc and w_pde ablations in docs/evidence/README.md).
 
 Optimisation: Adam with collocation points resampled every `resample_every` steps, then L-BFGS
 on a FIXED point set (resampling inside L-BFGS's line search breaks its curvature model).

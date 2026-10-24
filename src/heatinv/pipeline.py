@@ -20,6 +20,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.stats import chi2 as chi2_dist
 
 from .data import Experiment, load_bundle
 from .inverse import FitConfig, Problem, fit, predict
@@ -55,10 +56,10 @@ def _errors(pred: np.ndarray, target: np.ndarray) -> dict:
 
 
 def _score_noisy(preds: pd.DataFrame, exps) -> dict:
-    obs = pd.concat([e.obs[["obs_id", "y"]] for e in exps]).rename(
+    obs = pd.concat([e.obs[["experiment_id", "obs_id", "y"]] for e in exps]).rename(
         columns={"obs_id": "query_id"}
     )
-    m = preds.merge(obs, on="query_id")
+    m = preds.merge(obs, on=["experiment_id", "query_id"])
     out = {"pooled": _errors(m["y_pred"].to_numpy(), m["y"].to_numpy())}
     for eid, g in m.groupby("experiment_id"):
         out[eid] = _errors(g["y_pred"].to_numpy(), g["y"].to_numpy())
@@ -88,10 +89,10 @@ def run_fv(bundle, split, fv_cfg: dict, model="variable", fit_offsets=True):
     val_pred = pd.concat([predict(res, _as_query_experiment(e)) for e in val])
     out["val"] = _score_noisy(val_pred, val)
     y_val = val_pred.merge(
-        pd.concat([e.obs[["obs_id", "y"]] for e in val]).rename(
+        pd.concat([e.obs[["experiment_id", "obs_id", "y"]] for e in val]).rename(
             columns={"obs_id": "query_id"}
         ),
-        on="query_id",
+        on=["experiment_id", "query_id"],
     )["y"].to_numpy()
     out["val"]["obs_interval_coverage"] = _coverage(
         val_pred, y_val, "y_lower", "y_upper"
@@ -131,6 +132,34 @@ def run_fv(bundle, split, fv_cfg: dict, model="variable", fit_offsets=True):
 LRT_1DOF_P001 = 10.83  # chi^2(1) quantile at p = 0.001
 
 
+def exact_physics_recheck(
+    train, reference, params: dict, offsets: dict, fv_ref, p=1e-3
+) -> dict:
+    """Are (params, offsets) inside the exact-physics joint (1-p) confidence region of fv_ref on
+    the same training data?  Likelihood-ratio statistic  chi2(params) - chi2(optimum) ~ chi2(k)."""
+    prob = Problem(train, reference, FitConfig())
+    th = np.array(
+        [params["a0"], params["beta"], params["h"]]
+        + [offsets.get(s, 0.0) for s in prob.offset_sensors]
+    )
+    res = prob.residual(th)
+    dof = max(len(res) - len(th), 1)
+    chi2_p = float(res @ res)
+    d = chi2_p - fv_ref.chi2_red * (fv_ref.n_obs - fv_ref.n_par)
+    limit = float(chi2_dist.ppf(1 - p, len(th)))
+    gap = {
+        k: (params[k] - fv_ref.params[k]) / max(fv_ref.stderr[k], 1e-12)
+        for k in ("a0", "beta", "h")
+    }
+    return {
+        "chi2_red": chi2_p / dof,
+        "delta_chi2": float(d),
+        "limit": limit,
+        "param_gap_in_fv_sd": gap,
+        "reject": bool(d > limit),
+    }
+
+
 def compare_models(var_fit: dict, const_fit: dict) -> dict:
     """Guard: nested likelihood-ratio test, constant (beta = 0) inside variable a(x).
 
@@ -168,7 +197,13 @@ def compare_models(var_fit: dict, const_fit: dict) -> dict:
 
 
 def run_pinn(
-    bundle, split, pinn_cfg: dict, seeds, ckpt_root: Path | None = None, verbose=False
+    bundle,
+    split,
+    pinn_cfg: dict,
+    seeds,
+    ckpt_root: Path | None = None,
+    verbose=False,
+    fv_ref=None,
 ):
     import torch
 
@@ -245,21 +280,22 @@ def run_pinn(
         # Truth-free parameter check: do the PINN's parameters + offsets explain the TRAINING data
         # when the PDE is solved exactly (FV)? A PINN can fit the readings with a field that bends
         # near an unobserved boundary while carrying a wrong h; exact physics exposes that.
-        prob = Problem(train, bundle.reference_sensor, FitConfig())
-        th = np.array([a0, beta, h] + [offs.get(s, 0.0) for s in prob.offset_sensors])
-        res_fv = prob.residual(th)
-        dof = max(len(res_fv) - len(th), 1)
-        chi2_fv = float(res_fv @ res_fv / dof)
-        limit = 1.0 + 3.0 * np.sqrt(
-            2.0 / dof
-        )  # ~3 sigma above the noise-only expectation
-        r["fv_recheck_chi2_red"] = chi2_fv
-        r["fv_recheck_limit"] = float(limit)
-        if r["status"] == "ok" and chi2_fv > limit:
+        #
+        # v1 of this check compared chi2_red(PINN params) with an absolute noise-only limit; on the
+        # public run seed 2 passed by 1e-4 with h 43% low -- too little power. v2 is a likelihood-
+        # ratio test against the exact-physics optimum on the SAME data: are the PINN parameters
+        # inside the joint (1 - 1e-3) confidence region of the FV fit?  Delta chi^2 ~ chi^2(k).
+        if fv_ref is None:
+            fv_ref = fit(train, bundle.reference_sensor, FitConfig(n_starts=2))
+        rc = exact_physics_recheck(
+            train, bundle.reference_sensor, r["params"], offs, fv_ref
+        )
+        r.update({f"fv_recheck_{k}": v for k, v in rc.items() if k != "reject"})
+        if r["status"] == "ok" and rc["reject"]:
             r["status"] = "weak_evidence"
             r["fail_reasons"].append(
-                f"PINN parameters inconsistent with data under exact physics "
-                f"(FV chi2_red {chi2_fv:.2f} > {limit:.2f})"
+                f"PINN parameters outside the exact-physics joint 99.9% region on the training data "
+                f"(delta chi^2 {rc['delta_chi2']:.1f} > {rc['limit']:.1f})"
             )
 
         adapt_cost = 0.0

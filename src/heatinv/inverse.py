@@ -3,8 +3,8 @@
 Unknowns  theta = [a0, beta, h, b_s (all non-reference sensors seen in training)]
 Residual  r_k   = (u(x_k, t_k; a0, beta, h) + b_{s(k)} - y_k) / sigma_k
 Objective 0.5 * sum r_k^2   == Gaussian negative log-likelihood with the supplied noise sd,
-                               assuming independent errors (checked afterwards, see
-                               residual autocorrelation in diagnostics).
+                               assuming independent errors; checked inside fit() by the lag-1
+                               residual autocorrelation guard (intervals widened if violated).
 
 Uncertainty: Gauss-Newton / Laplace approximation  Cov = (J^T J)^{-1}  at the optimum (J of the
 whitened residuals). This is a local, linearised interval conditional on the model being right.

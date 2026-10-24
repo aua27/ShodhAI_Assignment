@@ -13,10 +13,12 @@ Cleaning rules (applied in this order; every dropped row is logged with its reas
   2. t not finite or outside [0, 1]                  -> drop  "invalid_time"
   3. y missing / not finite                          -> drop  "missing_value"
   4. noise_sd missing or <= 0                        -> drop  "invalid_noise_sd"
-  5. quality_flag == "bad"                           -> drop  "flag_bad"
+  5. quality_flag (case/whitespace-insensitive) == "bad" -> drop "flag_bad";
+     any flag other than ok/suspect/bad               -> drop  "unknown_flag"
      quality_flag == "suspect"                       -> keep (policy configurable), logged
-  6. repeated obs_id with identical content          -> keep first, drop rest "exact_duplicate"
-     repeated obs_id with conflicting content        -> drop ALL copies "conflict"
+  6. identity key is (experiment_id, obs_id) -- IDs may restart in each experiment
+     repeated key with identical content          -> keep first, drop rest "exact_duplicate"
+     repeated key with conflicting content        -> drop ALL copies "conflict"
      (after rule 5, so a bad-flagged copy cannot create a conflict with a good one)
 Rows are then sorted, so results do not depend on input row order.
 """
@@ -48,6 +50,9 @@ REQUIRED = {
     "initial_profiles": ["experiment_id", "x", "u0"],
     "boundary_histories": ["experiment_id", "t", "g", "Ta"],
 }
+
+
+KNOWN_FLAGS = {"ok", "suspect", "bad"}
 
 
 class BundleError(ValueError):
@@ -142,10 +147,15 @@ def clean_observations(obs, sensors, experiment_ids, keep_suspect=True):
     drop(~np.isfinite(obs["t"]) | (obs["t"] < 0) | (obs["t"] > 1), "invalid_time")
     drop(~np.isfinite(obs["y"]), "missing_value")
     drop(~np.isfinite(obs["noise_sd"]) | (obs["noise_sd"] <= 0), "invalid_noise_sd")
-    flag = obs["quality_flag"].fillna("ok").str.lower()
+    obs["quality_flag"] = (
+        obs["quality_flag"].fillna("ok").astype(str).str.strip().str.lower()
+    )
+    flag = obs["quality_flag"]
     drop(flag == "bad", "flag_bad")
+    # An unrecognised flag is not silently trusted: dropped and logged with its value.
+    drop(~obs["quality_flag"].isin(KNOWN_FLAGS), "unknown_flag")
     if keep_suspect:
-        for _, r in obs[flag.loc[obs.index] == "suspect"].iterrows():
+        for _, r in obs[obs["quality_flag"] == "suspect"].iterrows():
             log.append(
                 {
                     "source_row": int(r.source_row),
@@ -155,17 +165,20 @@ def clean_observations(obs, sensors, experiment_ids, keep_suspect=True):
                 }
             )
     else:
-        drop(obs["quality_flag"].str.lower() == "suspect", "flag_suspect")
+        drop(obs["quality_flag"] == "suspect", "flag_suspect")
 
-    content = ["experiment_id", "sensor_id", "t", "y", "noise_sd"]
-    dup = obs.duplicated("obs_id", keep=False)
+    # Identity key = (experiment_id, obs_id): loggers often restart IDs in each experiment, so an
+    # obs_id is only guaranteed unique within its experiment.
+    key = ["experiment_id", "obs_id"]
+    content = ["sensor_id", "t", "y", "noise_sd"]
+    dup = obs.duplicated(key, keep=False)
     if dup.any():
-        groups = obs[dup].groupby("obs_id")
-        conflict_ids = [
+        groups = obs[dup].groupby(key)
+        conflict_keys = {
             k for k, g in groups if len(g[content].round(10).drop_duplicates()) > 1
-        ]
-        drop(obs["obs_id"].isin(conflict_ids), "conflict")
-        drop(obs.duplicated("obs_id", keep="first"), "exact_duplicate")
+        }
+        drop(obs.set_index(key).index.isin(conflict_keys), "conflict")
+        drop(obs.duplicated(key, keep="first"), "exact_duplicate")
 
     obs = obs.sort_values(["experiment_id", "sensor_id", "t", "obs_id"]).reset_index(
         drop=True
@@ -223,8 +236,8 @@ def load_bundle(path, keep_suspect: bool = True) -> Bundle:
     q["t"] = pd.to_numeric(q["t"], errors="coerce")
     if (~np.isfinite(q["t"]) | ~q["t"].between(0, 1)).any():
         raise BundleError("queries.csv: query times must lie in [0, 1]")
-    if q["query_id"].duplicated().any():
-        raise BundleError("queries.csv: repeated query_id")
+    if q.duplicated(["experiment_id", "query_id"]).any():
+        raise BundleError("queries.csv: repeated query_id within an experiment")
     q["x"] = q["sensor_id"].map(xs)
 
     experiments = {}
@@ -235,6 +248,15 @@ def load_bundle(path, keep_suspect: bool = True) -> Bundle:
             raise BundleError(
                 f"{eid}: need >= 2 samples of the initial profile and boundary history"
             )
+        for name, df, cols in (
+            ("initial_profiles", ice, ("x", "u0")),
+            ("boundary_histories", bhe, ("t", "g", "Ta")),
+        ):
+            vals = df[list(cols)].apply(pd.to_numeric, errors="coerce").to_numpy(float)
+            if not np.isfinite(vals).all():
+                raise BundleError(
+                    f"{eid}: {name}.csv has missing / non-finite values (a NaN input would poison the solve)"
+                )
         if ice["x"].duplicated().any() or bhe["t"].duplicated().any():
             raise BundleError(
                 f"{eid}: repeated x in initial profile or repeated t in boundary history"
