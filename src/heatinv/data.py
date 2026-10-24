@@ -53,6 +53,13 @@ REQUIRED = {
 
 
 KNOWN_FLAGS = {"ok", "suspect", "bad"}
+ID_COLS = ("experiment_id", "sensor_id", "query_id")
+NUMERIC_COLS = {
+    "sensors": ("x",),
+    "queries": ("t",),
+    "initial_profiles": ("x", "u0"),
+    "boundary_histories": ("t", "g", "Ta"),
+}
 
 
 class BundleError(ValueError):
@@ -109,6 +116,24 @@ def _read(path: Path, name: str) -> pd.DataFrame:
     df["source_row"] = (
         np.arange(len(df)) + 2
     )  # 1-based line number in the CSV (header = line 1)
+    if (
+        name != "observations"
+    ):  # observations are cleaned row by row instead (logged, not fatal)
+        for c in ID_COLS:
+            if c in df and df[c].isna().any():
+                raise BundleError(
+                    f"{f.name}: missing {c} on line(s) {df.loc[df[c].isna(), 'source_row'].tolist()[:5]}"
+                )
+        for c in NUMERIC_COLS.get(name, ()):
+            v = pd.to_numeric(df[c], errors="coerce")
+            if not np.isfinite(v.to_numpy(float)).all():
+                rows = df.loc[~np.isfinite(v.to_numpy(float)), "source_row"].tolist()[
+                    :5
+                ]
+                raise BundleError(
+                    f"{f.name}: non-numeric / missing {c} on line(s) {rows}"
+                )
+            df[c] = v
     return df
 
 

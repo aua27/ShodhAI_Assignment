@@ -237,7 +237,7 @@ def test_nan_in_boundary_history_rejected(small_bundle, tmp_path):
         "boundary_histories",
         lambda d: d.assign(g=np.where(d.index == 10, np.nan, d["g"])),
     )
-    with pytest.raises(BundleError, match="finite"):
+    with pytest.raises(BundleError, match="non-numeric|finite"):
         load_bundle(dst)
 
 
