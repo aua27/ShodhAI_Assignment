@@ -43,8 +43,14 @@ class FitConfig:
     withhold_frac: float = (
         0.5  # withhold an estimate whose interval covers > this frac of its range
     )
-    chi2_warn: float = (
-        1.5  # reduced chi^2 above this -> noise model / physics questionable
+    chi2_warn: float | None = (
+        None  # None -> 1 + 3 sqrt(2/dof), i.e. ~3 sigma above pure noise
+    )
+    autocorr_z: float = (
+        3.0  # lag-1 residual autocorrelation z-score that flags structure
+    )
+    autocorr_inflate: bool = (
+        True  # widen intervals by the AR(1) factor (1+rho)/(1-rho) when flagged
     )
 
 
@@ -169,6 +175,27 @@ class Problem:
         return J
 
 
+def residual_autocorr(obs: pd.DataFrame, z: np.ndarray):
+    """Pooled lag-1 autocorrelation of standardised residuals along each (experiment, sensor)
+    series in time order, and its z-score (rho * sqrt(n_pairs) under independence)."""
+    o = (
+        obs[["experiment_id", "sensor_id", "t"]]
+        .assign(z=z)
+        .sort_values(["experiment_id", "sensor_id", "t"])
+    )
+    num = den = 0.0
+    pairs = 0
+    for _, g in o.groupby(["experiment_id", "sensor_id"]):
+        v = g["z"].to_numpy()
+        num += float(np.sum(v[1:] * v[:-1]))
+        den += float(np.sum(v * v))
+        pairs += len(v) - 1
+    if den == 0 or pairs == 0:
+        return 0.0, 0.0
+    rho = num / den
+    return rho, rho * np.sqrt(pairs)
+
+
 def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> FitResult:
     cfg = cfg or FitConfig()
     t0 = time.perf_counter()
@@ -226,12 +253,23 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
     except np.linalg.LinAlgError:
         cov = np.linalg.pinv(J.T @ J)
         notes.append("J^T J singular: at least one direction is not identifiable")
-    if chi2_red > cfg.chi2_warn:
+    chi2_limit = cfg.chi2_warn or 1.0 + 3.0 * np.sqrt(2.0 / max(n - k, 1))
+    if chi2_red > chi2_limit:
         notes.append(
-            f"reduced chi^2 = {chi2_red:.2f} > {cfg.chi2_warn}: misfit beyond stated noise; "
+            f"reduced chi^2 = {chi2_red:.2f} > {chi2_limit:.2f}: misfit beyond stated noise; "
             "intervals inflated by chi^2 and physics/noise model is suspect"
         )
         cov = cov * chi2_red
+    # Guard: serially correlated residuals mean either un-modelled structure (wrong physics,
+    # drift) or dependent noise. Both make the independent-noise Laplace interval too narrow.
+    rho, rho_z = residual_autocorr(prob.obs, prob.residual(theta))
+    if rho_z > cfg.autocorr_z:  # one-sided: only positive dependence makes intervals optimistic
+        msg = f"residuals serially correlated (lag-1 rho={rho:.2f}, z={rho_z:.1f}): model mismatch or dependent noise"
+        if cfg.autocorr_inflate and 0 < rho < 0.95:
+            infl = (1 + rho) / (1 - rho)
+            cov = cov * infl
+            msg += f"; intervals widened by AR(1) factor {infl:.2f}"
+        notes.append(msg)
     se = np.sqrt(np.clip(np.diag(cov), 0, None))
     zq = norm.ppf(0.5 + cfg.conf / 2)
 
@@ -269,7 +307,7 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
 
     if not best.success:
         status = "failed"
-    elif withheld or at_bound or chi2_red > cfg.chi2_warn or len(notes) > 0:
+    elif withheld or at_bound or chi2_red > chi2_limit or len(notes) > 0:
         status = "weak_evidence"
     else:
         status = "ok"

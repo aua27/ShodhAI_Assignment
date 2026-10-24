@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from .data import Experiment, load_bundle
-from .inverse import FitConfig, fit, predict
+from .inverse import FitConfig, Problem, fit, predict
 from .physics import PhysParams
 from .runlog import provenance, write_json
 from .solver import solve
@@ -96,6 +96,21 @@ def run_fv(bundle, split, fv_cfg: dict, model="variable", fit_offsets=True):
     out["val"]["obs_interval_coverage"] = _coverage(
         val_pred, y_val, "y_lower", "y_upper"
     )
+    # Guard: held-out predictive check. Validation readings standardised by the model's OWN
+    # predictive sd should have mean square ~1; far above that, the fitted physics does not
+    # transfer to an unseen experiment even if the training fit looked fine.
+    sd_val = (val_pred["y_upper"] - val_pred["y_lower"]).to_numpy() / (2 * 1.959964)
+    zv = (val_pred["y_pred"].to_numpy() - y_val) / sd_val
+    val_chi2 = float(np.mean(zv**2))
+    val_limit = 1.0 + 3.0 * np.sqrt(2.0 / max(len(zv), 1))
+    out["val"]["predictive_chi2"] = val_chi2
+    out["val"]["predictive_chi2_limit"] = val_limit
+    if val_chi2 > val_limit:
+        out["fit"]["notes"].append(
+            f"held-out predictive chi^2 {val_chi2:.2f} > {val_limit:.2f}: fitted physics does not transfer to validation"
+        )
+        if out["fit"]["status"] == "ok":
+            out["fit"]["status"] = "weak_evidence"
     test_pred = pd.concat([predict(res, e) for e in bundle.subset(split["test"])])
     out["predict_runtime_s"] = time.perf_counter() - t1
     out["energy_balance_max_defect"] = max(
@@ -111,6 +126,42 @@ def run_fv(bundle, split, fv_cfg: dict, model="variable", fit_offsets=True):
         for e in train
     )
     return res, out, val_pred, test_pred
+
+
+LRT_1DOF_P001 = 10.83  # chi^2(1) quantile at p = 0.001
+
+
+def compare_models(var_fit: dict, const_fit: dict) -> dict:
+    """Guard: nested likelihood-ratio test, constant (beta = 0) inside variable a(x).
+
+    A single model's chi^2 can look acceptable under wrong physics (offsets absorb it). The
+    comparison asks whether letting a(x) vary buys a fit improvement that noise alone would
+    almost never produce. Mutates the loser's status/notes so the verdict travels with it.
+    """
+    chi2_v = var_fit["chi2_red"] * (var_fit["n_obs"] - var_fit["n_par"])
+    chi2_c = const_fit["chi2_red"] * (const_fit["n_obs"] - const_fit["n_par"])
+    d = float(chi2_c - chi2_v)
+    if d > LRT_1DOF_P001:
+        verdict = "constant diffusivity rejected"
+        const_fit["notes"].append(
+            f"rejected by nested LRT vs variable a(x): delta chi^2 = {d:.1f} > {LRT_1DOF_P001}"
+        )
+        const_fit["status"] = "weak_evidence"
+    else:
+        verdict = (
+            "spatial variation not resolved: beta indistinguishable from 0 at p=0.001"
+        )
+        var_fit["notes"].append(
+            f"nested LRT vs constant a: delta chi^2 = {d:.1f} <= {LRT_1DOF_P001}; beta not supported"
+        )
+        if var_fit["status"] == "ok":
+            var_fit["status"] = "weak_evidence"
+    return {
+        "delta_chi2": d,
+        "threshold": LRT_1DOF_P001,
+        "test": "nested LRT, 1 dof (beta)",
+        "verdict": verdict,
+    }
 
 
 # ---- PINN route --------------------------------------------------------------------------------
@@ -191,6 +242,25 @@ def run_pinn(
                 )
             )
         r["consistency_rmse_vs_fv_same_params"] = float(np.mean(cons))
+        # Truth-free parameter check: do the PINN's parameters + offsets explain the TRAINING data
+        # when the PDE is solved exactly (FV)? A PINN can fit the readings with a field that bends
+        # near an unobserved boundary while carrying a wrong h; exact physics exposes that.
+        prob = Problem(train, bundle.reference_sensor, FitConfig())
+        th = np.array([a0, beta, h] + [offs.get(s, 0.0) for s in prob.offset_sensors])
+        res_fv = prob.residual(th)
+        dof = max(len(res_fv) - len(th), 1)
+        chi2_fv = float(res_fv @ res_fv / dof)
+        limit = 1.0 + 3.0 * np.sqrt(
+            2.0 / dof
+        )  # ~3 sigma above the noise-only expectation
+        r["fv_recheck_chi2_red"] = chi2_fv
+        r["fv_recheck_limit"] = float(limit)
+        if r["status"] == "ok" and chi2_fv > limit:
+            r["status"] = "weak_evidence"
+            r["fail_reasons"].append(
+                f"PINN parameters inconsistent with data under exact physics "
+                f"(FV chi2_red {chi2_fv:.2f} > {limit:.2f})"
+            )
 
         adapt_cost = 0.0
         for e in bundle.subset(split["val"]):
@@ -218,7 +288,10 @@ def run_pinn(
             )
         runs.append(r)
 
-    ok = [r for r in runs if r["status"] == "ok"]
+    # "failed" runs (diverged / non-finite / misfit / at bound) are excluded from the spread and
+    # ensemble; "weak_evidence" runs (parameters inconsistent under exact physics) stay in and are
+    # counted separately, because their TEMPERATURE predictions remain usable.
+    ok = [r for r in runs if r["status"] != "failed"]
     spread = {}
     for k in ("a0", "beta", "h"):
         vals = np.array([r["params"][k] for r in ok]) if ok else np.array([np.nan])
@@ -231,8 +304,9 @@ def run_pinn(
     summary = {
         "n_seeds": len(runs),
         "n_failed": len(runs) - len(ok),
-        "failed_seeds": [
-            {"seed": r["seed"], "reasons": r["fail_reasons"]}
+        "n_weak_evidence": sum(r["status"] == "weak_evidence" for r in runs),
+        "failed_or_weak_seeds": [
+            {"seed": r["seed"], "status": r["status"], "reasons": r["fail_reasons"]}
             for r in runs
             if r["status"] != "ok"
         ],
@@ -355,6 +429,10 @@ def evaluate(config_path, out_dir=None, with_pinn=True, verbose=True) -> dict:
                 f"{name}: status={o['fit']['status']} params={ {k: round(v, 4) for k, v in o['fit']['params'].items()} } "
                 f"val_rmse={o['val']['pooled']['rmse']:.4f}"
             )
+
+    results["model_comparison"] = compare_models(
+        results["fv_variable"]["fit"], results["fv_constant_baseline"]["fit"]
+    )
 
     if with_pinn and cfg.get("pinn", {}).get("enabled", True):
         pc = {

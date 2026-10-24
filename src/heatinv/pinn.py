@@ -48,6 +48,9 @@ class PINNConfig:
     adam_steps: int = 5000
     lr: float = 2e-3
     lr_phys: float = 5e-3
+    lr_final_frac: float = (
+        0.1  # Adam lr decays exponentially to this fraction of its start
+    )
     freeze_phys_steps: int = (
         1500  # physics params + offsets held at mid-range while fields warm up
     )
@@ -377,6 +380,11 @@ class Trainer:
                 # where the sigmoid saturates and h never recovers (docs/evidence/pinn_trial1_*).
                 self.model.z_phys.grad = None
                 self.model.z_off.grad = None
+            # Exponential decay to lr_final_frac of the base rate; a function of step only, so a
+            # resumed run reproduces it exactly.
+            decay = c.lr_final_frac ** (self.step / c.adam_steps)
+            for grp, base in zip(self.opt.param_groups, (c.lr, c.lr_phys)):
+                grp["lr"] = base * lr_scale * decay
             self.opt.step()
             self.step += 1
             if self.step % 50 == 0 or self.step == 1:
@@ -455,6 +463,7 @@ class Trainer:
             "runtime_s": time.perf_counter() - t0,
             "steps": self.step,
             "events": self.events,
+            "history": self.history,
             "sigma_ref": self.sigma_ref,
             "config": asdict(self.cfg),
         }

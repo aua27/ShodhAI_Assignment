@@ -326,3 +326,37 @@ def validate_rules(
     df = pd.DataFrame(rows)
     df.to_csv(Path(out) / "rule_validation.csv", index=False)
     return df
+
+
+SWEEP = {
+    "sensor_drift": [{"kind": "drift", "sensor": "S4", "rate": r} for r in (0.01, 0.02, 0.04)]
+    + [{"kind": "drift", "sensor": "S1", "rate": 0.03}],  # S1 = reference sensor
+    "heat_source": [{"kind": "heat_source", "Q": q, "xc": 0.6, "w": 0.1} for q in (0.03, 0.08, 0.2)],
+    "boundary_input_error": [{"kind": "boundary_error", "bias": b} for b in (0.005, 0.01, 0.02, 0.04)],
+}
+
+
+def sensitivity_sweep(out: Path, rules_path="configs/diagnosis_rules.yaml", replicates=2):
+    """Where do the frozen rules stop detecting? Smaller faults than validate_rules, known truth."""
+    from .synth import SynthSpec, generate, write_bundle
+
+    rules = yaml.safe_load(Path(rules_path).read_text())
+    rows = []
+    for kind, faults in SWEEP.items():
+        for f in faults:
+            for i in range(replicates):
+                seed = 8000 + len(rows)
+                tables, man, truth = generate(SynthSpec(seed=seed, fault=f))
+                d = Path(out) / "data" / f"sweep_{seed}"
+                write_bundle(tables, man, truth, d, Path(out) / "data" / f"sweep_{seed}_truth.json")
+                r = diagnose(load_bundle(d), rules, quick=True)
+                size = {k: v for k, v in f.items() if k not in ("kind", "xc", "w")}
+                rows.append({"true_fault": kind, **size, "replicate": i, "verdict": r["verdict"],
+                             "correct": r["verdict"] == f"suspected:{kind}",
+                             "top_delta_chi2": r["top_hypothesis"]["delta_chi2"],
+                             "chi2_red_base": r["observations"]["chi2_red_base"],
+                             "base_params": r["observations"]["base_params"]})
+                print({k: v for k, v in rows[-1].items() if k != "base_params"})
+    df = pd.DataFrame(rows)
+    df.to_csv(Path(out) / "sensitivity_sweep.csv", index=False)
+    return df

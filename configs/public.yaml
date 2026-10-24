@@ -23,6 +23,14 @@ pinn:
   n_colloc: 2000
   adam_steps: 5000
   lbfgs_iters: 300
+  lr: 0.002
+  lr_phys: 0.005
+  lr_final_frac: 0.1
+  freeze_phys_steps: 1500   # see docs/evidence/README.md (trial 1 failure)
+  w_obs: 1.0
+  w_pde: 1.0
+  w_ic: 1.0
+  w_bc: 1.0
   adapt_steps: 2000
   adapt_lbfgs: 150
   dtype: float32
