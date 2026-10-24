@@ -1,4 +1,4 @@
-"""Shared physical model: diffusivity profile, parameter bounds, packing helpers.
+"""Shared physical model: diffusivity profile and parameter bounds.
 
 PDE:   u_t = d/dx [ a(x) u_x ],   a(x) = a0 * exp(beta * (2x - 1)),   x, t in [0, 1]
 IC:    u(x, 0) = f(x)
@@ -20,7 +20,6 @@ BOUNDS = {
     "h": (0.03, 0.5),
 }
 OFFSET_BOUND = 0.03
-PHYS_NAMES = ("a0", "beta", "h")
 
 
 @dataclass(frozen=True)
@@ -29,19 +28,8 @@ class PhysParams:
     beta: float
     h: float
 
-    def as_array(self) -> np.ndarray:
-        return np.array([self.a0, self.beta, self.h], dtype=float)
-
     def to_dict(self) -> dict:
         return asdict(self)
-
-    @classmethod
-    def from_array(cls, v) -> "PhysParams":
-        return cls(float(v[0]), float(v[1]), float(v[2]))
-
-    def in_bounds(self) -> bool:
-        return all(BOUNDS[k][0] <= getattr(self, k) <= BOUNDS[k][1] for k in PHYS_NAMES)
-
 
 def diffusivity(x, a0: float, beta: float):
     """a(x) = a0 exp(beta (2x - 1)). Works on numpy arrays and torch tensors."""

@@ -42,7 +42,6 @@ class SynthSpec:
     truth: Optional[dict] = None  # {"a0","beta","h","offsets":[...]} or None -> random
     fault: Optional[dict] = None  # Stage 4 faults, see make_fault()
     extra_sensors: tuple = ()  # (x, ...) appended after sensor_x (design studies)
-    time_grid: str = "jitter"  # "jitter" | "uniform"
     noise_rho: float = 0.0  # AR(1) correlation between consecutive readings of a sensor
     sensor_times: Optional[dict] = (
         None  # {sensor_index: n_times} overrides n_times (design studies)
@@ -134,9 +133,7 @@ def _noise(rng, sd, t, rho):
     return e
 
 
-def _times(rng, n, mode):
-    if mode == "uniform":
-        return np.linspace(1.0 / n, 1.0, n)
+def _times(rng, n):
     base = (np.arange(n) + 0.5) / n
     return np.clip(base + rng.uniform(-0.4, 0.4, n) / n, 1e-3, 1.0)
 
@@ -179,7 +176,7 @@ def generate(spec: SynthSpec):
         ]
         for sid, x, b, sd in zip(sensor_ids, xs, truth["offsets"], sds):
             n_t = (spec.sensor_times or {}).get(sensor_ids.index(sid), spec.n_times)
-            t = _times(rng, n_t, spec.time_grid)
+            t = _times(rng, n_t)
             u = sol.sample(np.full_like(t, x), t)
             y = u + b + _noise(rng, sd, t, spec.noise_rho)
             for k in range(t.size):

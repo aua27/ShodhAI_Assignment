@@ -30,36 +30,16 @@ def refinement(path="outputs/verify/verify.json"):
 
 
 def val_predictions(out="outputs/public", bundle="data/public_v1"):
+    """Held-out experiment E4: readings vs the predictions `evaluate` wrote (no refitting here)."""
     from .data import load_bundle
-    from .inverse import FitConfig, fit, predict
-    from .pipeline import _as_query_experiment
 
-    b = load_bundle(bundle)
-    e4 = b.experiments["E4"]
-    q = _as_query_experiment(e4)
-    fig, axes = plt.subplots(1, 3, figsize=(9, 2.6), sharey=False)
-    sensors = ["S0", "S3", "S5"]
-    fits = {
-        m: fit(
-            b.subset(["E1", "E2", "E3"]),
-            b.reference_sensor,
-            FitConfig(model=m, n_starts=2),
-        )
-        for m in ("variable", "constant")
-    }
-    for ax, s in zip(axes, sensors):
+    e4 = load_bundle(bundle).experiments["E4"]
+    preds = {m: pd.read_csv(Path(out) / f"val_predictions_fv_{m}.csv") for m in ("variable", "constant_baseline")}
+    fig, axes = plt.subplots(1, 3, figsize=(9, 2.6))
+    for ax, s in zip(axes, ["S0", "S3", "S5"]):
         o = e4.obs[e4.obs["sensor_id"] == s]
-        ax.errorbar(
-            o["t"],
-            o["y"],
-            yerr=o["noise_sd"],
-            fmt=".",
-            ms=3,
-            color="0.5",
-            label="readings (held out)",
-        )
-        for m, c in (("variable", "C0"), ("constant", "C3")):
-            p = predict(fits[m], q)
+        ax.errorbar(o["t"], o["y"], yerr=o["noise_sd"], fmt=".", ms=3, color="0.5", label="readings (held out)")
+        for (m, p), c in zip(preds.items(), ("C0", "C3")):
             p = p[p["sensor_id"] == s].sort_values("t")
             ax.plot(p["t"], p["y_pred"], color=c, label=f"FV {m}")
             ax.fill_between(p["t"], p["y_lower"], p["y_upper"], color=c, alpha=0.15)

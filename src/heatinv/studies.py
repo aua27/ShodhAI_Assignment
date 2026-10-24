@@ -190,9 +190,6 @@ def coverage(out: Path, quick=False):
     return summary
 
 
-def _truth_of(t):
-    return {**t["params"], "offsets": list(t["offsets"].values())}
-
 
 def _redraw_noise(bundle, truth, seed):
     """Same latent field and offsets, new independent noise draw (data uncertainty in isolation)."""

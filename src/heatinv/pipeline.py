@@ -12,7 +12,6 @@ and also reported per experiment. "noisy" = against readings y (includes offset 
 
 from __future__ import annotations
 
-import copy
 import json
 import time
 from dataclasses import asdict
@@ -460,6 +459,7 @@ def evaluate(config_path, out_dir=None, with_pinn=True, verbose=True) -> dict:
         est[name] = o["fit"]
         preds[name] = tp
         tp.to_csv(out / f"predictions_{name}.csv", index=False)
+        vp.to_csv(out / f"val_predictions_{name}.csv", index=False)
         if verbose:
             print(
                 f"{name}: status={o['fit']['status']} params={ {k: round(v, 4) for k, v in o['fit']['params'].items()} } "

@@ -24,10 +24,8 @@ timed and reported separately.
 from __future__ import annotations
 
 import copy
-import random
 import time
 from dataclasses import asdict, dataclass
-from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -186,7 +184,7 @@ class Trainer:
         sensors = sorted({s for e in experiments for s in e.obs["sensor_id"]})
         offset_sensors = [s for s in sensors if s != reference]
         self.offset_index = {s: i for i, s in enumerate(offset_sensors)}
-        self._seed_all(cfg.seed)
+        torch.manual_seed(cfg.seed)  # network init; collocation uses self.gen
         self.model = InversePINN([e.id for e in experiments], offset_sensors, cfg).to(
             self.dtype
         )
@@ -200,15 +198,8 @@ class Trainer:
         self.step = 0
         self.history = []
         self.events = []
-        self.inject_nan_at = None  # test hook used by the divergence-recovery check
         self._make_optim(cfg.lr, cfg.lr_phys)
         self._resample()
-
-    @staticmethod
-    def _seed_all(seed):
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
 
     def _make_optim(self, lr, lr_phys):
         net_params = [
@@ -292,12 +283,7 @@ class Trainer:
             "history": self.history,
             "events": self.events,
             "pts": self.pts,
-            "rng": {
-                "torch": torch.get_rng_state(),
-                "gen": self.gen.get_state(),
-                "numpy": np.random.get_state(),
-                "python": random.getstate(),
-            },
+            "rng": {"torch": torch.get_rng_state(), "gen": self.gen.get_state()},
         }
 
     def load_state(self, s):
@@ -311,8 +297,6 @@ class Trainer:
         )
         torch.set_rng_state(s["rng"]["torch"])
         self.gen.set_state(s["rng"]["gen"])
-        np.random.set_state(s["rng"]["numpy"])
-        random.setstate(s["rng"]["python"])
         return s["phase"]
 
     def _record(self, L, phase):
@@ -347,9 +331,6 @@ class Trainer:
             if self.step % c.resample_every == 0 and self.step > 0:
                 self._resample()
             L = self.losses()
-            if self.inject_nan_at is not None and self.step == self.inject_nan_at:
-                self.inject_nan_at = None  # test hook: one-off simulated blow-up
-                L["total"] = L["total"] * float("nan")
             if not torch.isfinite(L["total"]):
                 # Numerical divergence: record it, roll back to the last good state, halve the lr.
                 self.events.append(
@@ -531,14 +512,6 @@ def adapt(model: InversePINN, experiment, cfg: PINNConfig, sigma_ref: float):
     return net, {"adapt_runtime_s": time.perf_counter() - t0, "adapt_final_loss": final}
 
 
-def field_on_grid(net, xg, tg, dtype=torch.float32):
-    X, Tt = np.meshgrid(xg, tg)
-    with torch.no_grad():
-        u = net(
-            torch.tensor(X.reshape(-1, 1), dtype=dtype),
-            torch.tensor(Tt.reshape(-1, 1), dtype=dtype),
-        )
-    return u.numpy().reshape(X.shape)
 
 
 def energy_balance(net, forcing, a0, beta, h, dtype=torch.float32, nx=201, nt=101):
@@ -564,14 +537,3 @@ def energy_balance(net, forcing, a0, beta, h, dtype=torch.float32, nx=201, nt=10
     scale = np.sqrt(np.mean(flux_in**2 + flux_out**2)) + 1e-12
     return float(np.sqrt(np.mean(defect**2)) / scale)
 
-
-def save_model(path: Path, trainer: Trainer):
-    torch.save(
-        {
-            "model": trainer.model.state_dict(),
-            "config": asdict(trainer.cfg),
-            "exp_ids": trainer.model.exp_ids,
-            "offset_sensors": trainer.model.offset_sensors,
-        },
-        path,
-    )

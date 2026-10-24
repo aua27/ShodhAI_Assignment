@@ -98,7 +98,16 @@ def restart_check(out: Path, bundle="data/public_v1", cfg: PINNConfig = SMALL) -
     corrupt.unlink()
 
     tr = Trainer(train, b.reference_sensor, cfg, None)
-    tr.inject_nan_at = 150
+    real_losses = tr.losses
+
+    def blow_up_once():  # simulated numerical blow-up at step 150, injected from outside
+        L = real_losses()
+        if tr.step == 150 and not getattr(tr, "_blown", False):
+            tr._blown = True
+            L["total"] = L["total"] * float("nan")
+        return L
+
+    tr.losses = blow_up_once
     rd = tr.train()
     ev = [e["event"] for e in rd["events"]]
     checks["divergence_recorded_and_recovered"] = {

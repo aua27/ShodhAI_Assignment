@@ -43,14 +43,8 @@ class FitConfig:
     withhold_frac: float = (
         0.5  # withhold an estimate whose interval covers > this frac of its range
     )
-    chi2_warn: float | None = (
-        None  # None -> 1 + 3 sqrt(2/dof), i.e. ~3 sigma above pure noise
-    )
     autocorr_z: float = (
         3.0  # lag-1 residual autocorrelation z-score that flags structure
-    )
-    autocorr_inflate: bool = (
-        True  # widen intervals by the AR(1) factor (1+rho)/(1-rho) when flagged
     )
 
 
@@ -253,7 +247,7 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
     except np.linalg.LinAlgError:
         cov = np.linalg.pinv(J.T @ J)
         notes.append("J^T J singular: at least one direction is not identifiable")
-    chi2_limit = cfg.chi2_warn or 1.0 + 3.0 * np.sqrt(2.0 / max(n - k, 1))
+    chi2_limit = 1.0 + 3.0 * np.sqrt(2.0 / max(n - k, 1))  # ~3 sigma above pure noise
     if chi2_red > chi2_limit:
         notes.append(
             f"reduced chi^2 = {chi2_red:.2f} > {chi2_limit:.2f}: misfit beyond stated noise; "
@@ -263,9 +257,11 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
     # Guard: serially correlated residuals mean either un-modelled structure (wrong physics,
     # drift) or dependent noise. Both make the independent-noise Laplace interval too narrow.
     rho, rho_z = residual_autocorr(prob.obs, prob.residual(theta))
-    if rho_z > cfg.autocorr_z:  # one-sided: only positive dependence makes intervals optimistic
+    if (
+        rho_z > cfg.autocorr_z
+    ):  # one-sided: only positive dependence makes intervals optimistic
         msg = f"residuals serially correlated (lag-1 rho={rho:.2f}, z={rho_z:.1f}): model mismatch or dependent noise"
-        if cfg.autocorr_inflate and 0 < rho < 0.95:
+        if rho < 0.95:  # widen by the AR(1) variance factor
             infl = (1 + rho) / (1 - rho)
             cov = cov * infl
             msg += f"; intervals widened by AR(1) factor {infl:.2f}"
@@ -367,30 +363,25 @@ def predict(fitres: FitResult, experiment, conf: float | None = None) -> pd.Data
         tp[j] += step
         tm[j] -= step
         G[:, j] = (u_at(tp) - u_at(tm)) / (2 * step)
-    cov_p = fitres.cov[:n_p, :n_p]
-    var_u = np.einsum("ij,jk,ik->i", G, cov_p, G)
+    var_u = np.einsum("ij,jk,ik->i", G, fitres.cov[:n_p, :n_p], G)
 
-    b = q["sensor_id"].map(fitres.offsets).astype(float)
-    var_b = np.zeros(len(q))
+    # Reading y = u + b_s: gradient w.r.t. ALL fitted parameters (physics + that sensor's offset).
+    Gy = np.zeros((len(q), len(fitres.names)))
+    Gy[:, :n_p] = G
     for i, s in enumerate(q["sensor_id"]):
-        name = f"b_{s}"
-        if name in fitres.names:
-            jb = fitres.names.index(name)
-            g_full = np.zeros(len(fitres.names))
-            g_full[:n_p] = G[i]
-            g_full[jb] = 1.0
-            var_b[i] = g_full @ fitres.cov @ g_full - var_u[i]
-        elif s != fitres.reference_sensor:
-            b.iloc[i] = (
-                0.0  # offset never seen in training: unknown, assume 0 with full-range uncertainty
-            )
-            var_b[i] = (OFFSET_BOUND / np.sqrt(3)) ** 2
+        if f"b_{s}" in fitres.names:
+            Gy[i, fitres.names.index(f"b_{s}")] = 1.0
+    var_y = np.einsum("ij,jk,ik->i", Gy, fitres.cov, Gy)
+    # Offset of a sensor never seen in training: unknown -> 0 with uniform full-range variance.
+    unseen = ~q["sensor_id"].isin(fitres.offsets).to_numpy()
+    var_y = var_y + unseen * (OFFSET_BOUND / np.sqrt(3)) ** 2
+    b = q["sensor_id"].map(fitres.offsets).fillna(0.0).to_numpy(float)
     # Unknown noise for a sensor never seen in training -> largest training sd (conservative).
     worst = max(fitres.noise_sd.values()) if fitres.noise_sd else 0.0
     noise = q["sensor_id"].map(fitres.noise_sd).fillna(worst).to_numpy(float)
     sd_u = np.sqrt(np.clip(var_u, 0, None))
-    sd_y = np.sqrt(np.clip(var_u + var_b, 0, None) + noise**2)
-    y = u + b.to_numpy()
+    sd_y = np.sqrt(np.clip(var_y, 0, None) + noise**2)
+    y = u + b
     return pd.DataFrame(
         {
             "query_id": q["query_id"],
