@@ -132,9 +132,10 @@ uncertainty isolated by redrawing only the noise 20 times: empirical sd / Laplac
 \RedrawRatioA\ ($a_0$), \RedrawRatioH\ ($h$), within the $\pm16\%$ sampling error of an sd from 20
 draws. Seed variability is a separate quantity: zero for the deterministic FV fit (multistarts agree),
 the PINN spread in Table~\ref{tab:main} for the PINN. Dependence assumption tested with AR(1) noise
-($\rho{=}0.6$): before the autocorrelation guard coverage fell to 90/90/75\%; with it every such
-dataset is flagged (\CovArFlagged/\CovArN) and intervals widened by $(1{+}\hat\rho)/(1{-}\hat\rho)$,
-restoring \CovArA/\CovArN, \CovArB/\CovArN, \CovArH/\CovArN; \CovIndFlagged/\CovIndN\ independent-noise datasets flagged.
+($\rho{=}0.6$): plain Laplace intervals cover \CovArRawA, \CovArRawB, \CovArRawH\ of \CovArN; the
+autocorrelation guard flags \CovArFlagged/\CovArN\ such datasets and widens intervals by
+$(1{+}\hat\rho)/(1{-}\hat\rho)$, giving \CovArA, \CovArB, \CovArH\ of \CovArN; it flags
+\CovIndFlagged/\CovIndN\ independent-noise datasets.
 
 \textbf{Controlled experiments (Fig.~\ref{fig:s3}a; one change each, fixed evaluation = latent RMSE on held-out E4).}
 Truth $(\AbTrueA,\AbTrueB,\AbTrueH)$. \emph{Coverage:} removing sensors at $x\ge0.7$ widens the $h$
@@ -154,7 +155,7 @@ $n{=}\DesN$ (\DesAErr\ vs \DesBErr) --- a precision gain, not a demonstrated acc
 \begin{figure}[t]\centering
 \includegraphics[width=0.62\linewidth]{ablation}\hfill
 \includegraphics[width=0.36\linewidth]{coverage}
-\caption{(a) Ablation: estimates $\pm$95\% (dashed: truth). (b) Interval coverage, independent vs AR(1) noise (with guard).}\label{fig:s3}
+\caption{(a) Ablation: estimates $\pm$95\% (dashed: truth). (b) Interval coverage: independent noise; AR(1) noise without and with the guard.}\label{fig:s3}
 \end{figure}
 
 \textbf{The three questions.}
@@ -175,21 +176,23 @@ from rules fixed in code, none using truth: $\chi^2_\nu$ above $1{+}3\sqrt{2/\nu
 autocorrelation ($z{>}3$); held-out predictive $\chi^2$; nested LRT constant-vs-variable $a$
 ($p{=}10^{-3}$); interval $>$50\% of the admissible range $\Rightarrow$ estimate \emph{withheld};
 estimate on a bound; multistart disagreement; PINN exact-physics recheck; fault-hypothesis scan.
-Each was added in response to a measured miss, and its false-alarm rate measured on correct models.
+Most were added in response to a measured miss; false-alarm rates were measured on correct models.
 
 \textbf{Model diagnosis.} Rules frozen in \texttt{configs/diagnosis\_rules.yaml}. Observations
 (residual trends, $\chi^2$, early/late parameter shift) are reported separately from causal
 hypotheses, each a nested one-parameter model: drift of sensor $s$ ($y{+}rt$, every sensor),
 Gaussian heat source (centre scanned), constant bias of the recorded $g$. Evidence $=\Delta\chi^2$
 (LRT), with the extra parameter's estimate $\pm$ sd as sensitivity. Threshold v2 $=15.1$ (Bonferroni
-over 10 hypotheses, family $p{=}10^{-3}$; v1's ad-hoc 25 missed drifts at $\Delta\chi^2$ 16--24); max over
-\NullN\ fault-free bundles \NullMax. Validation\syn: \DiagValOk/\DiagValN\ correct; fault-size sweep: \SweepDetected/\SweepN\ detected,
-\SweepNamedWrong\ of \SweepNamed\ named verdicts wrong. Below the limits (drift $\lesssim$0.02/unit time,
-boundary bias $\lesssim$0.02) faults go undetected yet can bias $\beta$ by up to $\sim$0.09.
+over 10 hypotheses, family $p{=}10^{-3}$; it replaced an ad-hoc 25, which would have missed
+\SweepVOneMiss\ of the sweep's detections); over \NullN\ fault-free bundles the largest $\Delta\chi^2$ is
+\NullMax\ (\NullFalse\ false alarms). Validation\syn: \DiagValOk/\DiagValN\ correct. Fault-size
+sweep\syn: \SweepDetected/\SweepN\ detected, \SweepAmbig\ ambiguous, \SweepNamedWrong\ of \SweepNamed\
+named verdicts wrong. Missed faults reach drift rate \SweepMissDrift/unit time, source $Q{=}$\SweepMissQ\ and
+boundary bias \SweepMissBias; undetected, they still bias $\beta$ by up to \SweepMissBetaErr.
 \textbf{Blind test:} rules committed $\rightarrow$ sealed bundle (fault drawn from OS randomness, truth
 hashed) committed $\rightarrow$ verdict committed $\rightarrow$ unsealed. Verdict: \emph{\SealVerdict}
 ($\Delta\chi^2{=}\SealDchi$, $Q{=}\SealQ\pm\SealQsd$ at the nearest scanned centre); truth: heat source,
-$Q{=}\SealTrueQ$ at $x{=}\SealTrueXc$ (width differs; integrated heat agrees within 10\%). The base fit
+$Q{=}\SealTrueQ$ at $x{=}\SealTrueXc$ (width differs; integrated heat agrees within \SealHeatRatio\%). The base fit
 there reported \texttt{ok} with $h{=}\SealBaseH$ (true \SealTrueH; \SealFixedH\ once the source is
 modelled) --- which is why the fault scan now runs inside \texttt{evaluate} (public bundle: \ScanVerdict).
 
@@ -210,10 +213,11 @@ wall time.
 \textbf{One misleading result, investigated.} In the first public evaluation a PINN seed passed the
 recheck with $h{=}\VOneSeedTwoH$ (true \TrueH): $\chi^2_\nu{=}\VOneSeedTwoChi$ against a limit of
 \VOneSeedTwoLim. Investigation: an absolute $\chi^2_\nu$ test has little power because a wrong $h$ moves
-$\chi^2_\nu$ by $\sim$0.1. Fix: test the PINN parameters against the FV optimum on the same data
+$\chi^2_\nu$ by only \VOneChiGap\ above the optimum. Fix: test the PINN parameters against the FV optimum on the same data
 (LRT, $\chi^2_k$); it rejects this case by a wide margin and is pinned by a regression test.
-Testing also found four input bugs (IDs restarting per experiment were all dropped as conflicts; a
-NaN input passed silently; unknown flags were trusted; per-experiment query IDs were rejected), all fixed.
+Testing also found five bugs (IDs restarting per experiment were all dropped as conflicts; a
+NaN input passed silently; unknown flags were trusted; per-experiment query IDs were rejected; the
+smoke run failed on a fresh clone), all fixed.
 
 \textbf{Compute.} Laptop i7-1165G7 (4 cores), 16\,GB, no GPU, 4 torch threads. FV fit \FvFitSec\,s;
 PINN \PinnTrainSec\,s/seed + \PinnAdaptSec\,s physics-only adaptation; full public evaluation \EvalWall\,min;
@@ -251,7 +255,7 @@ the sealed blind test; the git history shows the order. Rule changes (one-sided 
 Bonferroni threshold) are declared with the evidence that motivated them.
 \item \emph{Adversarial testing:} 56 automated tests (black-box: metamorphic shift/scale invariance,
 renamed IDs/layouts, row order, edge-of-box truths, malformed inputs, CLI; white-box: autograd operator,
-Jacobian, decision branches, interval algebra). They found four real bugs and one wrong test premise.
+Jacobian, decision branches, interval algebra). They found five real bugs and one wrong test premise.
 \item \emph{AI errors caught:} an ad-hoc threshold, a guard with too little power, a premature claim that a
 status rule was protective (it let a 9$\times$ error through), a mis-stated clock time. Each was challenged,
 re-measured and corrected; the over-engineering review removed dead code and test hooks from production paths.

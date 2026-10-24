@@ -118,6 +118,7 @@ s2 = [x for x in v1["pinn"]["runs"] if x["seed"] == 2][0]
 m("VOneSeedTwoChi", s2["fv_recheck_chi2_red"], "{:.4f}")
 m("VOneSeedTwoLim", s2["fv_recheck_limit"], "{:.4f}")
 m("VOneSeedTwoH", s2["params"]["h"], "{:.3f}")
+m("VOneChiGap", s2["fv_recheck_chi2_red"] - v1["fv_variable"]["fit"]["chi2_red"], "{:.2f}")
 
 # --- studies -------------------------------------------------------------------------------
 cv = J("outputs/studies/coverage/coverage.json")["summary"]
@@ -125,6 +126,8 @@ for rho, tag in (("rho=0.0", "Ind"), ("rho=0.6", "Ar")):
     for k, n in (("a0", "A"), ("beta", "B"), ("h", "H")):
         m(f"Cov{tag}{n}", cv[rho][k]["covered"], "{:d}")
     m(f"Cov{tag}N", cv[rho]["a0"]["n"], "{:d}")
+    for k, n in (("a0", "A"), ("beta", "B"), ("h", "H")):
+        m(f"Cov{tag}Raw{n}", cv[rho][k]["covered_without_guard"], "{:d}")
     lo = min(cv[rho][k]["wilson95"][0] for k in ("a0", "beta", "h"))
     m(f"Cov{tag}WilsonLo", lo, "{:.2f}")
 rows = C("outputs/studies/coverage/coverage_rows.csv")
@@ -227,9 +230,24 @@ m("SweepNamed", len(named), "{:d}")
 m("SweepNamedWrong", int((~named.correct).sum()), "{:d}")
 m("SweepN", len(sw), "{:d}")
 m("SweepDetected", int(sw.correct.sum()), "{:d}")
+m("SweepAmbig", int(sw.verdict.str.startswith("ambiguous").sum()), "{:d}")
+m("SweepVOneMiss", int(((sw.top_delta_chi2 >= 15.1) & (sw.top_delta_chi2 < 25) & sw.correct).sum()), "{:d}")
+import ast
+berr = []
+for i, x in sw.iterrows():
+    t = J(f"outputs/diagnosis_sweep/data/sweep_{8000 + i}_truth.json")["params"]
+    berr.append(abs(ast.literal_eval(x.base_params)["beta"] - t["beta"]))
+sw["beta_abs_err"] = berr
+miss = sw[sw.verdict == "no_fault_detected"]  # strictly undetected (ambiguous verdicts still flag a fault)
+m("SweepMissBetaErr", miss.beta_abs_err.max(), "{:.2f}")
+m("SweepMissDrift", miss[miss.true_fault == "sensor_drift"].rate.max(), "{:.2f}")
+m("SweepMissQ", miss[miss.true_fault == "heat_source"].Q.max(), "{:.2f}")
+m("SweepMissBias", miss[miss.true_fault == "boundary_input_error"].bias.max(), "{:.2f}")
 nu = C("outputs/diagnosis_null/null_tops.csv")
-m("NullMax", nu.top_delta_chi2.max(), "{:.1f}")
-m("NullN", len(nu) + 3, "{:d}")
+nulls = list(nu.top_delta_chi2) + list(dv[dv.true_fault == "none"].top_delta_chi2)
+m("NullMax", max(nulls), "{:.1f}")
+m("NullN", len(nulls), "{:d}")
+m("NullFalse", int((nu.verdict != "no_fault_detected").sum() + (~dv[dv.true_fault == "none"].ok).sum()), "{:d}")
 sd = J("results/sealed_diagnosis.json")
 m("SealVerdict", sd["verdict"].replace("_", " "))
 m("SealDchi", sd["top_hypothesis"]["delta_chi2"], "{:.0f}")
@@ -240,6 +258,7 @@ st = J("data/sealed_v1_truth.json")
 m("SealTrueQ", st["fault"]["Q"], "{:.3f}")
 m("SealTrueXc", st["fault"]["xc"], "{:.2f}")
 m("SealTrueH", st["params"]["h"], "{:.3f}")
+m("SealHeatRatio", 100 * abs(sd["top_hypothesis"]["estimate"] * 0.15 / (st["fault"]["Q"] * st["fault"]["w"]) - 1), "{:.0f}")
 best_hs = max(
     (t for t in sd["hypothesis_tests"] if t["kind"] == "heat_source"),
     key=lambda t: t["delta_chi2"],

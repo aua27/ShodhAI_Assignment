@@ -17,6 +17,7 @@ BUDGET_S = 600
 
 def smoke(out: Path) -> bool:
     out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
     t_all = time.perf_counter()
     stages = {}
 
@@ -112,11 +113,20 @@ def smoke(out: Path) -> bool:
         r = diagnose(load_bundle(out / "diag_bundle"), rules, quick=True)
         return {"ok": True, "verdict": r["verdict"], "planted": "boundary_input_error"}
 
+    def studies_quick():
+        from . import studies
+
+        studies.ablation(out / "studies", quick=True)
+        cov = studies.coverage(out / "studies", quick=True)
+        studies.design(out / "studies", quick=True)
+        return {"coverage_rate_independent": {k: v["rate"] for k, v in cov["rho=0.0"].items()}}
+
     stage("verify", verify)
     stage("fv_fit_predict", fv)
     stage("pinn_1seed", pinn)
     stage("restart", restart)
     stage("diagnosis", diagnosis)
+    stage("studies_quick", studies_quick)
     total = time.perf_counter() - t_all
     ok = all(s["ok"] for s in stages.values()) and total < BUDGET_S
     write_json(
