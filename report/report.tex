@@ -131,7 +131,7 @@ $\beta$ settles near the FV value (dotted); $a_0$ ends \PinnErrA\% low and $h$ f
 independent synthetic datasets: coverage \CovIndA/\CovIndN, \CovIndB/\CovIndN, \CovIndH/\CovIndN\
 (Wilson lower bound \CovIndWilsonLo; $n$ is small --- a sanity check, not calibration). Data
 uncertainty isolated by redrawing only the noise 20 times: empirical sd / Laplace sd $=$
-\RedrawRatioA\ ($a_0$), \RedrawRatioB\ ($\beta$), \RedrawRatioH\ ($h$), about 1.6--1.8 times the $\pm16\%$
+\RedrawRatioA\ ($a_0$), \RedrawRatioB\ ($\beta$), \RedrawRatioH\ ($h$), about \RedrawSeMin--\RedrawSeMax\ times the $\pm16\%$
 sampling error of an sd from 20 draws (hinting mild optimism), whereas across datasets the standardised
 errors have sd \CovZsdMin--\CovZsdMax\ (hinting mild conservatism); at $n{=}20$ neither is conclusive
 and coverage is nominal. Seed variability is a separate quantity: zero for the deterministic FV fit (multistarts agree),
@@ -263,9 +263,9 @@ renamed IDs/layouts, row order, edge-of-box truths, malformed inputs, CLI; white
 Jacobian, decision branches, interval algebra). They found six real bugs (one by fuzzing the loader), one wrong test premise and, on a fresh clone,
 a dependency-pin gap (installation now uses the full lock file).
 \item \emph{AI errors caught:} an ad-hoc threshold, a guard with too little power, a premature claim that a
-status rule was protective (it let a 9$\times$ error through), a mis-stated clock time. Each was challenged,
+status rule was protective (it let a $\AbLatRatioConst\times$ error through), a mis-stated clock time. Each was challenged,
 re-measured and corrected; the over-engineering review removed dead code and test hooks from production paths.
-\item \emph{No hand-typed numbers:} every number in this report is generated from result files by
+\item \emph{No hand-typed results:} every result number in this report is generated from result files by
 \texttt{report/make\_numbers.py}.
 \end{itemize}
 \end{document}

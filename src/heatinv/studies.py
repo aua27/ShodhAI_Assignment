@@ -17,7 +17,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import beta as beta_dist
 
 from .data import Experiment, load_bundle
 from .inverse import FitConfig, Problem, fit, predict

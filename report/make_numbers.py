@@ -285,6 +285,9 @@ m("FvErrB", 100 * abs(fvp["beta"] - tr["beta"]) / abs(tr["beta"]), "{:.0f}")
 zs = [cv["rho=0.0"][k]["z_sd"] for k in ("a0", "beta", "h")]
 m("CovZsdMin", min(zs), "{:.2f}")
 m("CovZsdMax", max(zs), "{:.2f}")
+ex = [(nr[k]["empirical_sd_over_redraws"] / nr[k]["mean_laplace_sd"] - 1) / 0.16 for k in ("a0", "beta", "h")]
+m("RedrawSeMin", min(ex), "{:.1f}")
+m("RedrawSeMax", max(ex), "{:.1f}")
 m("RedrawRatioB", nr["beta"]["empirical_sd_over_redraws"] / nr["beta"]["mean_laplace_sd"], "{:.2f}")
 c = abd["assume_constant_a"]
 m("AbConstAChi", c["chi2_red"], "{:.2f}")
