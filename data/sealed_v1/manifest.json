@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "synthetic": true,
+  "generator": {
+    "seed": 1056003781,
+    "grid": [
+      400,
+      1600
+    ],
+    "defects": false,
+    "purpose": "sealed blind diagnosis (synthetic)",
+    "fault": "SEALED"
+  },
+  "experiments": [
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "E5"
+  ],
+  "reference_sensor": "S1",
+  "sealed_truth_sha256": "910221e0448f5586a791abae252f6439686bc6605d01f37013916c6b014ee822",
+  "files": {
+    "sensors.csv": "8968cf1fe04c5d9cd0a6ef802bd376adaeca310518b3b7631442090afa1f99f1",
+    "observations.csv": "de93fcdd8a68ce408888cc43d3a57686bea2816b44fc66c951e933253b842473",
+    "queries.csv": "fe1e66f99a429a1b1a83017e7b4ed9f81d61abeaab21a74b46338adc3ecfa9aa",
+    "initial_profiles.csv": "c9b49378612c6858bc46ad8fba917df966856cf251bed17fa6abfd0007cae90f",
+    "boundary_histories.csv": "2b537e29a81a9d6216811753010c890f6eb68ccd726bd77f95025bab01047641"
+  }
+}
