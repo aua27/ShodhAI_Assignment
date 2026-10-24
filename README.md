@@ -22,7 +22,8 @@ diagnosis and recovery studies. Report: [`report/report.pdf`](report/report.pdf)
 ```bash
 python -m venv .venv
 .venv/Scripts/activate            # Windows;  source .venv/bin/activate on Linux/macOS
-pip install -r requirements.txt   # pinned; full lock in requirements-lock.txt
+pip install -r requirements-lock.txt   # exact versions of every package (tested on a fresh clone)
+# (requirements.txt pins only the direct dependencies; transitive ones may then drift)
 pip install -e . --no-deps
 
 python -m heatinv smoke                                   # every stage, reduced size (~3.5 min CPU; budget 10)
