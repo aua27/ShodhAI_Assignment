@@ -110,8 +110,10 @@ tolerate $\sim$1 noise level of physics error, enough for the field to bend betw
 ($x{=}0.85$) and the Robin end so a wrong $h$ satisfies the BC. Tuning stopped there.
 
 \textbf{Result.} On the public bundle\syn\ the PINN reproduces the readings ($L_{\rm obs}{=}\PinnObsLoss$,
-train RMSE \PinnTrainRmse) and has small seed spread, but $h{=}\PinnH$ vs \TrueH; seed spread is
-\emph{not} uncertainty. Agreement of the PINN field with an FV field at the PINN's own parameters
+train RMSE \PinnTrainRmse) with small seed spread, yet its parameters are off: $h$ by \PinnErrH\%
+(\PinnGapHMin--\PinnGapHMax\ FV standard deviations from the FV estimate) and $a_0$ by \PinnErrA\%
+(\PinnGapAMin--\PinnGapAMax\ FV sd); only $\beta$ agrees with FV (within \PinnGapBMax\ FV sd; truth
+errors \PinnErrB\% PINN, \FvErrB\% FV). Seed spread is \emph{not} uncertainty. Agreement of the PINN field with an FV field at the PINN's own parameters
 (RMSE \PinnCons) shows consistency only. The accuracy question is answered by an exact-physics
 likelihood-ratio check (\S5): all seeds lie outside the FV fit's joint 99.9\% region
 ($\Delta\chi^2$ \PinnDchiMin--\PinnDchiMax\ vs \PinnDchiLim) and are reported \texttt{weak\_evidence}.
@@ -121,7 +123,7 @@ likelihood-ratio check (\S5): all seeds lie outside the FV fit's joint 99.9\% re
 \includegraphics[width=0.27\linewidth]{refinement}\hfill
 \includegraphics[width=0.70\linewidth]{pinn_traces}
 \caption{(a) MMS refinement, slope 2. (b) PINN parameter trajectories, public bundle\syn, 3 seeds:
-$a_0,\beta$ settle near truth (dashed) and FV (dotted); $h$ does not.}\label{fig:ver}
+$\beta$ settles near the FV value (dotted); $a_0$ ends \PinnErrA\% low and $h$ far below truth (dashed).}\label{fig:ver}
 \end{figure}
 
 \section{Stage 3 --- investigation}
@@ -129,8 +131,10 @@ $a_0,\beta$ settle near truth (dashed) and FV (dotted); $h$ does not.}\label{fig
 independent synthetic datasets: coverage \CovIndA/\CovIndN, \CovIndB/\CovIndN, \CovIndH/\CovIndN\
 (Wilson lower bound \CovIndWilsonLo; $n$ is small --- a sanity check, not calibration). Data
 uncertainty isolated by redrawing only the noise 20 times: empirical sd / Laplace sd $=$
-\RedrawRatioA\ ($a_0$), \RedrawRatioH\ ($h$), within the $\pm16\%$ sampling error of an sd from 20
-draws. Seed variability is a separate quantity: zero for the deterministic FV fit (multistarts agree),
+\RedrawRatioA\ ($a_0$), \RedrawRatioB\ ($\beta$), \RedrawRatioH\ ($h$), about 1.6--1.8 times the $\pm16\%$
+sampling error of an sd from 20 draws (hinting mild optimism), whereas across datasets the standardised
+errors have sd \CovZsdMin--\CovZsdMax\ (hinting mild conservatism); at $n{=}20$ neither is conclusive
+and coverage is nominal. Seed variability is a separate quantity: zero for the deterministic FV fit (multistarts agree),
 the PINN spread in Table~\ref{tab:main} for the PINN. Dependence assumption tested with AR(1) noise
 ($\rho{=}0.6$): plain Laplace intervals cover \CovArRawA, \CovArRawB, \CovArRawH\ of \CovArN; the
 autocorrelation guard flags \CovArFlagged/\CovArN\ such datasets and widens intervals by
@@ -140,8 +144,8 @@ $(1{+}\hat\rho)/(1{-}\hat\rho)$, giving \CovArA, \CovArB, \CovArH\ of \CovArN; i
 \textbf{Controlled experiments (Fig.~\ref{fig:s3}a; one change each, fixed evaluation = latent RMSE on held-out E4).}
 Truth $(\AbTrueA,\AbTrueB,\AbTrueH)$. \emph{Coverage:} removing sensors at $x\ge0.7$ widens the $h$
 interval $\AbHWidthRatioRight\times$; early times only ($t\le0.3$) widen it $\AbHWidthRatioEarly\times$ and
-$\beta$'s too; 4$\times$ sparser sampling widens all but stays unbiased; dropping left sensors barely
-matters. \emph{Assumptions:} constant $a$ gives $\AbLatRatioConst\times$ the held-out latent error;
+$\beta$'s too; 4$\times$ sparser sampling widens all intervals but estimates stay within them; dropping left
+sensors mainly widens $\beta$ ($\AbBWidthRatioLeft\times$). \emph{Assumptions:} constant $a$ gives $\AbLatRatioConst\times$ the held-out latent error;
 offsets forced to zero push $\beta$ to \AbZeroOffB. Hypotheses were stated before running (code, \texttt{ABLATION\_HYPOTHESES}).
 
 \textbf{Experimental design.} One new sensor at $x{=}0.95$ (24 readings/experiment, unknown offset) vs
@@ -159,11 +163,12 @@ $n{=}\DesN$ (\DesAErr\ vs \DesBErr) --- a precision gain, not a demonstrated acc
 \end{figure}
 
 \textbf{The three questions.}
-\emph{Can sensor bias mask incorrect physics despite low temperature error?} Yes. On 5 strongly
-graded datasets\syn\ the constant-$a$ model with free offsets reaches train RMSE \BiasWrongTrain\ (correct
-model \BiasOkTrain) while $\beta$ is off by \BiasWrongBErr\ and held-out latent error is
-\BiasWrongLat\ vs \BiasOkLat; on milder gradients (ablation) its $\chi^2_\nu$ looks acceptable.
-Detection needs model comparison or held-out prediction, not training fit.
+\emph{Can sensor bias mask incorrect physics despite low temperature error?} Yes, more so as the true
+gradient weakens. With $\beta{=}0.45$ (ablation\syn) the constant-$a$ model with free offsets fits the
+training readings at $\chi^2_\nu{=}\AbConstAChi$ (limit \AbConstALim: \emph{accepted}) while its held-out
+latent error is $\AbLatRatioConst\times$ larger. With $\beta{=}0.6$ (5 datasets\syn) offsets still absorb most
+of the misfit (train RMSE \BiasWrongTrain\ vs \BiasOkTrain) but $\chi^2_\nu{=}\BiasWrongChi$ exposes it.
+Detection needs model comparison or held-out prediction, not training fit alone.
 \emph{Which parameters become weakly identifiable?} $h$ first (right-end coverage or late times),
 then $\beta$ (early times); $a_0$ stays well determined.
 \emph{Which additional measurement helps, and why?} A sensor near the Robin end: it observes the
@@ -215,9 +220,9 @@ recheck with $h{=}\VOneSeedTwoH$ (true \TrueH): $\chi^2_\nu{=}\VOneSeedTwoChi$ a
 \VOneSeedTwoLim. Investigation: an absolute $\chi^2_\nu$ test has little power because a wrong $h$ moves
 $\chi^2_\nu$ by only \VOneChiGap\ above the optimum. Fix: test the PINN parameters against the FV optimum on the same data
 (LRT, $\chi^2_k$); it rejects this case by a wide margin and is pinned by a regression test.
-Testing also found five bugs (IDs restarting per experiment were all dropped as conflicts; a
-NaN input passed silently; unknown flags were trusted; per-experiment query IDs were rejected; the
-smoke run failed on a fresh clone), all fixed.
+Testing also found six bugs (IDs restarting per experiment were all dropped as conflicts; a
+NaN input passed silently; unknown flags were trusted; per-experiment query IDs were rejected; a garbage numeric
+cell crashed the loader; the smoke run failed on a fresh clone), all fixed.
 
 \textbf{Compute.} Laptop i7-1165G7 (4 cores), 16\,GB, no GPU, 4 torch threads. FV fit \FvFitSec\,s;
 PINN \PinnTrainSec\,s/seed + \PinnAdaptSec\,s physics-only adaptation; full public evaluation \EvalWall\,min;
@@ -253,9 +258,10 @@ open it; corrupting validation labels leaves training estimates bit-identical.
 \item \emph{Pre-registration:} methods and diagnosis rules were committed before the final evaluation and
 the sealed blind test; the git history shows the order. Rule changes (one-sided autocorrelation test,
 Bonferroni threshold) are declared with the evidence that motivated them.
-\item \emph{Adversarial testing:} 56 automated tests (black-box: metamorphic shift/scale invariance,
+\item \emph{Adversarial testing:} \NTests\ automated tests (black-box: metamorphic shift/scale invariance,
 renamed IDs/layouts, row order, edge-of-box truths, malformed inputs, CLI; white-box: autograd operator,
-Jacobian, decision branches, interval algebra). They found five real bugs and one wrong test premise.
+Jacobian, decision branches, interval algebra). They found six real bugs (one by fuzzing the loader), one wrong test premise and, on a fresh clone,
+a dependency-pin gap (installation now uses the full lock file).
 \item \emph{AI errors caught:} an ad-hoc threshold, a guard with too little power, a premature claim that a
 status rule was protective (it let a 9$\times$ error through), a mis-stated clock time. Each was challenged,
 re-measured and corrected; the over-engineering review removed dead code and test hooks from production paths.

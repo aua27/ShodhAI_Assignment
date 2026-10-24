@@ -111,7 +111,7 @@ configs/       public.yaml  synth_public.yaml  diagnosis_rules.yaml (frozen)
 data/          public_v1/ (synthetic bundle)  truth/ (synthetic truth, scoring only)
                sealed_v1/ + sealed_v1_truth.json (Stage-4 blind test; truth hash in manifest)
 results/       final public evaluation outputs; sealed-diagnosis verdict; archived v1/v2 runs
-tests/         56 tests: solver, data validation, inverse, restart, black-box, white-box
+tests/         58 tests: solver, data validation, inverse, restart, black-box, white-box
 docs/          evidence/ (PINN development log, failed runs), WALKTHROUGH.md
 report/        report.pdf (5 pages incl. 1-page AI appendix), report.tex, make_numbers.py, figures/
 ```
@@ -120,5 +120,6 @@ report/        report.pdf (5 pages incl. 1-page AI appendix), report.tex, make_n
 
 See `report/report.pdf` (Table 1) and `results/public/estimates.json`. In short: the FV fit recovers
 `a0, beta, h` inside 95% intervals; the constant-diffusivity baseline matches the noisy readings
-almost as well but is rejected by the nested test; the PINN recovers `a0, beta` but not `h` and is
-reported `weak_evidence` automatically; the frozen diagnosis rules identified the sealed blind fault.
+almost as well but is rejected by the nested test; the PINN fits the readings but its parameters are off
+(`h` badly, `a0` moderately; only `beta` agrees with FV) and every seed is reported `weak_evidence`
+automatically; the frozen diagnosis rules identified the sealed blind fault.
