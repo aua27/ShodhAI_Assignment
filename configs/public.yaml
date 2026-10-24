@@ -1,0 +1,29 @@
+# Public evaluation: python -m heatinv evaluate --config configs/public.yaml
+bundle: data/public_v1
+split:
+  train: [E1, E2, E3]
+  val: [E4]
+  test: [E5]          # no temperature labels in the bundle; predicted from known inputs only
+keep_suspect: true    # "suspect" readings kept (logged); "bad" readings dropped
+truth: data/truth/public_v1_truth.json   # SYNTHETIC truth, read only for final scoring
+output: outputs/public
+
+fv:
+  nx: 100             # justified by refinement study: discretisation error ~3e-5 << noise 1e-2
+  nt: 400
+  n_starts: 4
+  seed: 0
+  conf: 0.95
+
+pinn:
+  enabled: true
+  seeds: [0, 1, 2]
+  width: 48
+  depth: 4
+  n_colloc: 2000
+  adam_steps: 5000
+  lbfgs_iters: 300
+  adapt_steps: 2000
+  adapt_lbfgs: 150
+  dtype: float32
+  threads: 4

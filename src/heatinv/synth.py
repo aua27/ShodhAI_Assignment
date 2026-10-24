@@ -43,6 +43,10 @@ class SynthSpec:
     fault: Optional[dict] = None  # Stage 4 faults, see make_fault()
     extra_sensors: tuple = ()  # (x, ...) appended after sensor_x (design studies)
     time_grid: str = "jitter"  # "jitter" | "uniform"
+    noise_rho: float = 0.0  # AR(1) correlation between consecutive readings of a sensor
+    sensor_times: Optional[dict] = (
+        None  # {sensor_index: n_times} overrides n_times (design studies)
+    )
     meta: dict = field(default_factory=dict)
 
 
@@ -116,6 +120,20 @@ def make_fault(fault: dict, sensor_ids: list):
     return source, obs_tf, g_tf
 
 
+def _noise(rng, sd, t, rho):
+    """Gaussian noise; rho > 0 gives AR(1) dependence along each sensor's time-ordered series."""
+    z = rng.normal(0.0, sd, t.size)
+    if rho <= 0:
+        return z
+    order = np.argsort(t)
+    e = np.empty(t.size)
+    prev = 0.0
+    for i, k in enumerate(order):
+        prev = z[k] if i == 0 else rho * prev + np.sqrt(1 - rho**2) * z[k]
+        e[k] = prev
+    return e
+
+
 def _times(rng, n, mode):
     if mode == "uniform":
         return np.linspace(1.0 / n, 1.0, n)
@@ -160,9 +178,10 @@ def generate(spec: SynthSpec):
             for t, g, ta in zip(fr.tb, g_recorded, fr.Ta)
         ]
         for sid, x, b, sd in zip(sensor_ids, xs, truth["offsets"], sds):
-            t = _times(rng, spec.n_times, spec.time_grid)
+            n_t = (spec.sensor_times or {}).get(sensor_ids.index(sid), spec.n_times)
+            t = _times(rng, n_t, spec.time_grid)
             u = sol.sample(np.full_like(t, x), t)
-            y = u + b + rng.normal(0.0, sd, t.size)
+            y = u + b + _noise(rng, sd, t, spec.noise_rho)
             for k in range(t.size):
                 row = {
                     "experiment_id": eid,

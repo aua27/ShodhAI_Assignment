@@ -1,0 +1,14 @@
+# SYNTHETIC public bundle (no real bundle was supplied with the brief).
+# Truth is drawn at random from the inner 80% of each admissible range by `seed`
+# and written to a separate file that fitting/prediction never read.
+out: data/public_v1
+truth_out: data/truth/public_v1_truth.json
+seed: 2026
+n_experiments: 5
+sensor_x: [0.1, 0.25, 0.4, 0.55, 0.7, 0.85]
+reference_index: 1
+n_times: 25
+noise_sd: [0.008, 0.015]
+unlabeled: [E5]
+defects: true
+meta: {purpose: "public evaluation bundle (synthetic)"}

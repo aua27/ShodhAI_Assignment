@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "synthetic": true,
+  "generator": {
+    "seed": 2026,
+    "grid": [
+      400,
+      1600
+    ],
+    "defects": true,
+    "purpose": "public evaluation bundle (synthetic)"
+  },
+  "experiments": [
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "E5"
+  ],
+  "reference_sensor": "S1",
+  "files": {
+    "sensors.csv": "8968cf1fe04c5d9cd0a6ef802bd376adaeca310518b3b7631442090afa1f99f1",
+    "observations.csv": "bffb9e4fabd8d88f6e9e7553da60534e6890ce437575b07234d30d5f76076b76",
+    "queries.csv": "b0cca95add44038f1c88c26cde912ca231e05aed9e94e4ef63fdd29fa560bbf0",
+    "initial_profiles.csv": "c85e7ee1ea6812198a2d6cd03eaac9b6bbb7ec5178b5c257ae87d660f4885def",
+    "boundary_histories.csv": "4814ea7b58f509885e1816970d218ec27dab808da314eab94ca4eaf590ad72d9"
+  }
+}

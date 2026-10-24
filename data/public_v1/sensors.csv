@@ -1,0 +1,7 @@
+sensor_id,x,is_reference
+S0,0.1,False
+S1,0.25,True
+S2,0.4,False
+S3,0.55,False
+S4,0.7,False
+S5,0.85,False

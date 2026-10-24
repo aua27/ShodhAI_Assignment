@@ -1,0 +1,40 @@
+C:\Projects\placements\03 Companies\Shodh AI\Assignment\src\heatinv\pinn.py:111: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:839.)
+  return {"a0": float(a0), "beta": float(beta), "h": float(h)}
+{'step': 500, 'obs': 4.5114, 'pde': 7.9582, 'ic': 4.9004, 'bc': 117.3053, 'total': 134.6752, 'a0': 0.0358, 'beta': -0.309, 'h': 0.0598}
+{'step': 1000, 'obs': 4.2631, 'pde': 3.7401, 'ic': 2.7545, 'bc': 100.366, 'total': 111.1236, 'a0': 0.0323, 'beta': -0.2905, 'h': 0.0441}
+{'step': 1500, 'obs': 6.2465, 'pde': 21.3955, 'ic': 7.0714, 'bc': 53.9236, 'total': 88.637, 'a0': 0.0315, 'beta': -0.3002, 'h': 0.0398}
+{'step': 2000, 'obs': 3.3003, 'pde': 3.5009, 'ic': 1.1787, 'bc': 6.8108, 'total': 14.7907, 'a0': 0.0311, 'beta': -0.2727, 'h': 0.036}
+{'step': 2500, 'obs': 2.5067, 'pde': 1.2409, 'ic': 0.9815, 'bc': 1.8667, 'total': 6.5957, 'a0': 0.0309, 'beta': -0.0572, 'h': 0.0337}
+{'step': 3000, 'obs': 2.2644, 'pde': 0.8459, 'ic': 0.7118, 'bc': 1.1286, 'total': 4.9507, 'a0': 0.0311, 'beta': 0.0641, 'h': 0.0324}
+{'step': 3500, 'obs': 2.2618, 'pde': 0.6985, 'ic': 0.914, 'bc': 1.1928, 'total': 5.0671, 'a0': 0.0315, 'beta': 0.1163, 'h': 0.0316}
+{'step': 4000, 'obs': 2.0962, 'pde': 0.4891, 'ic': 0.6212, 'bc': 0.584, 'total': 3.7905, 'a0': 0.0329, 'beta': 0.1724, 'h': 0.0311}
+{'step': 4500, 'obs': 2.0386, 'pde': 0.465, 'ic': 0.5391, 'bc': 0.5141, 'total': 3.5567, 'a0': 0.0355, 'beta': 0.2419, 'h': 0.0309}
+{'step': 5000, 'obs': 1.9527, 'pde': 0.3749, 'ic': 0.4507, 'bc': 0.4729, 'total': 3.2513, 'a0': 0.0371, 'beta': 0.3042, 'h': 0.0308}
+{
+"params": {
+"a0": 0.03740854933857918,
+"beta": 0.321269690990448,
+"h": 0.03083481267094612
+},
+"offsets": {
+"S0": 0.005247195716947317,
+"S2": 0.01046711765229702,
+"S3": -0.0206837747246027,
+"S4": -0.023988772183656693,
+"S5": -0.019763944670557976,
+"S1": 0.0
+},
+"final_losses": {
+"obs": 1.7825957536697388,
+"pde": 0.3213097155094147,
+"ic": 0.30527201294898987,
+"bc": 0.27686598896980286,
+"total": 2.6860435009002686
+},
+"status": "failed",
+"fail_reasons": [
+"h at bound"
+],
+"runtime_s": 269.07780640001874
+}
