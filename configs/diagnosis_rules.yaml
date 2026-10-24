@@ -1,10 +1,14 @@
 # Stage 4 diagnostic rules -- FROZEN. Committed before the sealed diagnosis bundle is analysed
 # and before its fault label is read. Changing anything here after that point invalidates the
 # blind test; any later change must be a new, separately committed version.
-version: 1
+version: 2
+# v1 -> v2 (made BEFORE the sealed bundle existed): lrt_threshold 25.0 (ad hoc, ~5 sigma) replaced
+# by a Bonferroni threshold. 10 nested hypotheses are tested per bundle; family-wise p = 0.001
+# -> per-test p = 1e-4 -> chi^2(1) quantile 15.1. Evidence: 13 fault-free synthetic bundles gave a
+# maximum delta chi^2 of 6.8; v1 missed drifts with delta chi^2 15.7-23.8 (outputs/diagnosis_sweep).
 fit_experiments: [E1, E2, E3, E4]   # every labelled experiment in the suspect bundle
 chi2_red_misfit: 1.3      # base model misfit beyond the stated noise -> "observation: misfit"
-lrt_threshold: 25.0       # chi^2 drop needed to support a 1-parameter fault hypothesis (~5 sigma)
+lrt_threshold: 15.1       # chi^2 drop needed to support a 1-parameter fault hypothesis
 min_margin: 10.0          # best hypothesis must beat the runner-up by this chi^2 to be named alone
 hypotheses:
   sensor_drift:           # one extra parameter: linear-in-time drift of ONE sensor (each tested)
