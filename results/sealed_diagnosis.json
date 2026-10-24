@@ -1,0 +1,275 @@
+{
+  "verdict": "suspected:heat_source",
+  "status": "weak_evidence",
+  "verdict_is": "a causal hypothesis consistent with the data, not an observed fact",
+  "top_hypothesis": {
+    "kind": "heat_source",
+    "where": "xc=0.75",
+    "delta_chi2": 38.11333556224463,
+    "estimate": 0.0511635982857562,
+    "sd": 0.00860575250765372
+  },
+  "observations": {
+    "chi2_red_base": 1.1027337919527038,
+    "misfit_beyond_noise": false,
+    "base_params": {
+      "a0": 0.1117468032249367,
+      "beta": -0.2738755537842765,
+      "h": 0.17780445205307172
+    },
+    "base_status": "ok",
+    "residual_trend_by_sensor": {
+      "S0": {
+        "slope": -0.22479330017420646,
+        "z": -0.6543216003914355,
+        "mean_abs_z": 0.9082124576724051,
+        "x": 0.1
+      },
+      "S1": {
+        "slope": -0.7521913164543518,
+        "z": -2.167552562403029,
+        "mean_abs_z": 0.9144290738092227,
+        "x": 0.25
+      },
+      "S2": {
+        "slope": -0.20428720703466047,
+        "z": -0.5861893291516745,
+        "mean_abs_z": 0.7802561657957487,
+        "x": 0.4
+      },
+      "S3": {
+        "slope": -0.4119754230427357,
+        "z": -1.1936630343783343,
+        "mean_abs_z": 0.7973959597086465,
+        "x": 0.55
+      },
+      "S4": {
+        "slope": -1.0285419307923374,
+        "z": -2.9932722124152304,
+        "mean_abs_z": 0.7753872221316657,
+        "x": 0.7
+      },
+      "S5": {
+        "slope": -0.011377612391468672,
+        "z": -0.03273857674240846,
+        "mean_abs_z": 0.7510926449059034,
+        "x": 0.85
+      }
+    },
+    "sensors_with_time_trend": [],
+    "window_parameter_shift": {
+      "a0": {
+        "early": 0.11253479985524321,
+        "late": 0.10966534024825908,
+        "z": 0.6109980445578683
+      },
+      "beta": {
+        "early": -0.22989716769876298,
+        "late": -0.31017090589632423,
+        "z": 1.5263372024826993
+      },
+      "h": {
+        "early": 0.21443128215957533,
+        "late": 0.21300635619500038,
+        "z": 0.04781045864917469
+      }
+    }
+  },
+  "hypothesis_tests": [
+    {
+      "kind": "sensor_drift",
+      "where": "S0",
+      "chi2": 652.3842576501714,
+      "estimate": 0.0020799674836602406,
+      "sd": 0.0031571079006583323,
+      "phys": {
+        "a0": 0.11190156048312896,
+        "beta": -0.27211427738734995,
+        "h": 0.17801266511906416
+      },
+      "delta_chi2": 0.4341471858292607
+    },
+    {
+      "kind": "sensor_drift",
+      "where": "S1",
+      "chi2": 649.5338273755603,
+      "estimate": 0.0052029081666144054,
+      "sd": 0.0028777218147890624,
+      "phys": {
+        "a0": 0.1139639159460071,
+        "beta": -0.24387707598388922,
+        "h": 0.17994508552245098
+      },
+      "delta_chi2": 3.284577460440346
+    },
+    {
+      "kind": "sensor_drift",
+      "where": "S2",
+      "chi2": 652.444565027153,
+      "estimate": 0.0024785307625569838,
+      "sd": 0.004058665808200796,
+      "phys": {
+        "a0": 0.11201527864978739,
+        "beta": -0.26986134204085716,
+        "h": 0.17839792905634397
+      },
+      "delta_chi2": 0.3738398088477197
+    },
+    {
+      "kind": "sensor_drift",
+      "where": "S3",
+      "chi2": 651.2596844558814,
+      "estimate": 0.004607468836777824,
+      "sd": 0.0036966441139763316,
+      "phys": {
+        "a0": 0.11207709111651397,
+        "beta": -0.2679298375786601,
+        "h": 0.1799840996973751
+      },
+      "delta_chi2": 1.5587203801193255
+    },
+    {
+      "kind": "sensor_drift",
+      "where": "S4",
+      "chi2": 641.2533232771027,
+      "estimate": 0.01135659176653582,
+      "sd": 0.0033358340125090244,
+      "phys": {
+        "a0": 0.11131932888284837,
+        "beta": -0.27387697150114165,
+        "h": 0.19106044586423876
+      },
+      "delta_chi2": 11.565081558897987
+    },
+    {
+      "kind": "sensor_drift",
+      "where": "S5",
+      "chi2": 652.8152714641478,
+      "estimate": 0.00027215737750660256,
+      "sd": 0.00473213676072645,
+      "phys": {
+        "a0": 0.1116961086116726,
+        "beta": -0.2744507523808661,
+        "h": 0.17832092616094322
+      },
+      "delta_chi2": 0.0031333718528685495
+    },
+    {
+      "kind": "heat_source",
+      "where": "xc=0.25",
+      "chi2": 640.484840925582,
+      "estimate": 0.025411277121576127,
+      "sd": 0.00738224688094769,
+      "phys": {
+        "a0": 0.11720891309399895,
+        "beta": -0.19618917846371095,
+        "h": 0.19658411247306537
+      },
+      "delta_chi2": 12.333563910418661
+    },
+    {
+      "kind": "heat_source",
+      "where": "xc=0.5",
+      "chi2": 626.359966224115,
+      "estimate": 0.03409363733785375,
+      "sd": 0.006922404425247772,
+      "phys": {
+        "a0": 0.11692873699295761,
+        "beta": -0.18960240480828053,
+        "h": 0.22670849026756115
+      },
+      "delta_chi2": 26.45843861188564
+    },
+    {
+      "kind": "heat_source",
+      "where": "xc=0.75",
+      "chi2": 614.7050692737561,
+      "estimate": 0.0511635982857562,
+      "sd": 0.00860575250765372,
+      "phys": {
+        "a0": 0.1119109421936796,
+        "beta": -0.24294022142974436,
+        "h": 0.27864012563198237
+      },
+      "delta_chi2": 38.11333556224463
+    },
+    {
+      "kind": "boundary_input_error",
+      "where": "x=0",
+      "chi2": 646.7971879077717,
+      "estimate": 0.007676171377896366,
+      "sd": 0.0031705212590028274,
+      "phys": {
+        "a0": 0.11547243795255908,
+        "beta": -0.22238660484155087,
+        "h": 0.18614138811144884
+      },
+      "delta_chi2": 6.021216928229023
+    }
+  ],
+  "physics_estimates_trustworthy": false,
+  "provenance": {
+    "kind": "diagnose",
+    "timestamp_utc": "2026-10-24T18:28:15+00:00",
+    "data_sha256": "0a5bbe298dc747c8ed6550325c4bfc38a02d8c6cd3374ad4ca80fb99d07404a9",
+    "config_hash": "87e3d83310c1c26e",
+    "config": {
+      "version": 2,
+      "fit_experiments": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "chi2_red_misfit": 1.3,
+      "lrt_threshold": 15.1,
+      "min_margin": 10.0,
+      "hypotheses": {
+        "sensor_drift": {
+          "rate_bound": 0.5
+        },
+        "heat_source": {
+          "centres": [
+            0.25,
+            0.5,
+            0.75
+          ],
+          "width": 0.15,
+          "q_bound": 3.0
+        },
+        "boundary_input_error": {
+          "bias_bound": 0.3
+        }
+      },
+      "supporting_checks": {
+        "residual_trend_z": 4.0,
+        "window_split_t": 0.5
+      },
+      "decision": [
+        "no hypothesis passes lrt AND chi2_red <= chi2_red_misfit -> no_fault_detected (status ok)",
+        "best passes lrt AND margin >= min_margin                  -> suspected:<kind> (status weak_evidence)",
+        "best passes lrt AND margin <  min_margin                  -> ambiguous:<kinds> (status weak_evidence)",
+        "no hypothesis passes lrt AND chi2_red > chi2_red_misfit   -> unexplained_misfit (status weak_evidence)",
+        "a named hypothesis is a CAUSAL HYPOTHESIS consistent with the data, never an observed fact"
+      ]
+    },
+    "seed": null,
+    "git": {
+      "commit": "1840949",
+      "dirty": false
+    },
+    "hardware": {
+      "platform": "Windows-10-10.0.26200-SP0",
+      "machine": "AMD64",
+      "python": "3.11.9",
+      "cpu_count_logical": 8,
+      "cpu": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "torch": "2.12.0+cpu",
+      "torch_threads": 4,
+      "cuda": false,
+      "numpy": "2.4.3",
+      "scipy": "1.17.1"
+    },
+    "wall_time_s": 31.258
+  }
+}
