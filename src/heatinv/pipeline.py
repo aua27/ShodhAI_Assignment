@@ -433,6 +433,29 @@ def evaluate(config_path, out_dir=None, with_pinn=True, verbose=True) -> dict:
     results["model_comparison"] = compare_models(
         results["fv_variable"]["fit"], results["fv_constant_baseline"]["fit"]
     )
+    # Guard: fault-hypothesis scan on the TRAINING experiments (frozen Stage-4 rules). The sealed
+    # blind test showed an un-modelled heat source absorbed into h with every single-fit guard
+    # quiet; only the nested fault models caught it.
+    if cfg.get("fault_scan", True):
+        import yaml
+
+        from .diagnose import diagnose
+
+        rules = yaml.safe_load(
+            Path(cfg.get("diagnosis_rules", "configs/diagnosis_rules.yaml")).read_text()
+        )
+        rules["fit_experiments"] = list(split["train"])
+        scan = diagnose(bundle, rules, quick=True)
+        results["fault_scan"] = {
+            k: scan[k] for k in ("verdict", "status", "top_hypothesis", "verdict_is")
+        }
+        if scan["verdict"] != "no_fault_detected":
+            f = results["fv_variable"]["fit"]
+            f["notes"].append(
+                f"fault scan on training data: {scan['verdict']} (causal hypothesis, not observed fact)"
+            )
+            if f["status"] == "ok":
+                f["status"] = "weak_evidence"
 
     if with_pinn and cfg.get("pinn", {}).get("enabled", True):
         pc = {
