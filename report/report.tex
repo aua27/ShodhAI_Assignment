@@ -47,7 +47,9 @@ bundle\syn\ \ClnBad\ \texttt{bad}-flagged, \ClnConflict\ conflicting repeated-ID
 duplicate, \ClnMissing\ missing and \ClnTime\ out-of-domain rows were dropped; \ClnSuspect\
 \texttt{suspect} rows kept and logged. Identity key $=$(experiment, obs\_id); conflicting copies are
 all dropped (no silent tie-break). Split: fit E1--E3, validate E4 (labels never reach a fitting
-routine --- tested by corrupting them), predict E5 from inputs only.
+routine --- tested by corrupting them), predict E5 from inputs only. Methods were frozen at commit
+\texttt{\FreezeCommit}; later commits changed only status rules, input validation and dead code, and
+all estimates are \RunsIdentical\ across the three evaluation runs (archived in \texttt{results/}).
 
 \section{Stage 1 --- reference solver and inference}
 Cell-centred finite volumes with exact face diffusivities (conservative: energy changes only through
@@ -65,7 +67,7 @@ three within $4\sigma$, offsets within 0.01); coverage over 20 datasets is in \S
 \begin{table}[t]\small\centering
 \caption{Public bundle\syn: estimates (95\% Laplace intervals) and errors. Truth $a_0{=}\TrueA$,
 $\beta{=}\TrueB$, $h{=}\TrueH$. ``noisy'' = vs readings $y$; ``latent'' = vs noise-free $u$ at E5
-queries. PINN: mean over \PinnNSeeds\ seeds, [min,max] across seeds (a spread, \emph{not} an interval).}
+queries. RMSE pooled over all scored readings (weight 1 each). PINN: mean over \PinnNSeeds\ seeds, [min,max] across seeds (a spread, \emph{not} an interval).}
 \label{tab:main}
 \begin{tabular}{lccc}\toprule
  & FV, variable $a(x)$ (primary) & FV, constant $a$ (baseline) & inverse PINN\\\midrule
@@ -91,7 +93,9 @@ time --- offsets absorb the missing gradient. It is rejected automatically by th
 ($\Delta\chi^2{=}\LrtBeta$, \S5).
 
 \section{Stage 2 --- inverse PINN}
-\textbf{Design.} One $4{\times}48$ tanh MLP per experiment (inputs scaled to $[-1,1]$); shared
+\textbf{Design.} One $4{\times}48$ tanh MLP per experiment (inputs scaled to $[-1,1]$) --- tanh because the
+loss needs smooth second derivatives; one net per experiment because each has its own forcing while the
+physics is shared; small because the fields are smooth and CPU time is the budget; shared
 $(a_0,\beta,h)$ bounded by sigmoids, offsets by $0.03\tanh$. Losses in noise units (divided by the
 median sensor variance) so a constraint violated by one noise level costs about one misfitted reading:
 $L_{\rm obs}$ (whitened), $L_{\rm pde}$ with the \emph{conservative} operator by autograd
@@ -237,8 +241,8 @@ detection limits bias $\beta$ silently; Laplace intervals are local; the PINN's 
 gain (only precision shown); coverage from 20 datasets. \textbf{Distinctions kept:} training fit
 (Table~\ref{tab:main} row 5) vs held-out prediction (rows 6--7) vs parameter recovery (synthetic only)
 vs physical consistency (energy balance, PINN--FV agreement).
-\textbf{Time spent:} build and experiments $\approx$5\,h (24 Oct 21:50 -- 25 Oct 02:30 IST, AI-assisted);
-review and walkthrough preparation on 25 Oct (author).
+\textbf{Time spent:} planning, build, experiments and report $\approx$4.5\,h (24 Oct 21:50 -- 25 Oct 02:15 IST,
+AI-assisted, git history); review and walkthrough preparation on 25 Oct (author, to be added).
 
 \newpage
 \section*{Appendix --- AI assistance and verification (1 page)}

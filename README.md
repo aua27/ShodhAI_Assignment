@@ -28,7 +28,7 @@ pip install -e . --no-deps
 
 python -m heatinv smoke                                   # every stage, reduced size (~3.5 min CPU; budget 10)
 python -m heatinv evaluate --config configs/public.yaml   # THE public evaluation command
-pytest -q                                                 # focused checks (~1.5 min)
+pytest -q                                                 # 58 focused checks (~3 min)
 ```
 
 | Command | What it does | Output |
@@ -47,7 +47,7 @@ pytest -q                                                 # focused checks (~1.5
 no GPU used, Windows 11, Python 3.11.9, torch 2.12.0+cpu, 4 torch threads.
 Measured (see `results/public/results.json` provenance and `outputs/smoke/smoke.json`): FV fit ~6 s;
 one PINN seed (5000 Adam + 300 L-BFGS) ~4 min + ~1 min physics-only adaptation per seed;
-full `evaluate` incl. 3 PINN seeds ~16 min; smoke ~3.5 min; all studies ~27 min; `pytest` ~1.5 min.
+full `evaluate` incl. 3 PINN seeds ~16 min; smoke ~3.5 min; all studies ~27 min; `pytest` ~3 min.
 Memory < 1 GB. GPU not needed.
 
 **Reproduce everything** (about 50 min):
@@ -59,6 +59,22 @@ python -m heatinv restart && python -m heatinv smoke
 python -m heatinv.figures && python report/make_numbers.py && (cd report && pdflatex report.tex)
 ```
 `report/make_numbers.py` writes every number in the report from these result files (no hand-typed numbers).
+
+**Agreed machine.** The brief's "agreed machine" was not specified; the reference laptop above is
+assumed (confirmation requested). The smoke run reports its own wall time and hardware.
+
+**Focused checks required by the brief** (all in `pytest`):
+
+| Check | Tests |
+|---|---|
+| solver correctness | `tests/test_solver.py` (MMS order, steady state, energy), `test_whitebox.py::test_maximum_principle_*` |
+| known-truth recovery | `tests/test_inverse.py::test_known_truth_recovery`, `test_blackbox.py::test_truth_near_box_edges` |
+| held-out prediction | `tests/test_inverse.py::test_held_out_prediction`, `test_prediction_needs_no_labels` |
+| input validation | `tests/test_data.py`, `test_blackbox.py` (malformed inputs, IDs, layouts), `test_round2.py::test_loader_fuzz` |
+| restart behaviour | `tests/test_restart.py` (resume, incompatible / corrupt checkpoint, divergence) |
+| model mismatch | `tests/test_inverse.py::test_model_mismatch_flagged`, `test_whitebox.py::test_exact_physics_recheck_*` |
+| withholding | `tests/test_inverse.py::test_withholding_when_unidentifiable` |
+| no private-label access | `test_blackbox.py::test_truth_file_never_read_*`, `test_validation_labels_never_reach_fitting` |
 
 ## Data format (input contract)
 
