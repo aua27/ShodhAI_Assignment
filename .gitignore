@@ -6,3 +6,6 @@ outputs/
 checkpoints/
 *.egg-info/
 Shodh_AI_ML_Intern_Assessment.pdf
+report/*.aux
+report/*.log
+report/*.out
