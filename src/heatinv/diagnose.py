@@ -384,3 +384,23 @@ def sensitivity_sweep(
     df = pd.DataFrame(rows)
     df.to_csv(Path(out) / "sensitivity_sweep.csv", index=False)
     return df
+
+
+def null_runs(out: Path, rules_path="configs/diagnosis_rules.yaml", n=10):
+    """Fault-free bundles: the largest delta chi^2 under the null sets the false-alarm scale."""
+    from .synth import SynthSpec, generate, write_bundle
+
+    rules = yaml.safe_load(Path(rules_path).read_text())
+    rows = []
+    for i in range(n):
+        tables, man, truth = generate(SynthSpec(seed=9000 + i, fault={"kind": "none"}))
+        d = Path(out) / "data" / f"null_{i}"
+        write_bundle(tables, man, truth, d, Path(out) / "data" / f"null_{i}_truth.json")
+        r = diagnose(load_bundle(d), rules, quick=True)
+        t = r["top_hypothesis"]
+        rows.append({"i": i, "verdict": r["verdict"], "top_kind": t["kind"], "where": t["where"],
+                     "top_delta_chi2": t["delta_chi2"], "chi2_red": r["observations"]["chi2_red_base"]})
+        print(rows[-1])
+    df = pd.DataFrame(rows)
+    df.to_csv(Path(out) / "null_tops.csv", index=False)
+    return df

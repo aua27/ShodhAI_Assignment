@@ -70,6 +70,7 @@ class FitResult:
     cfg: FitConfig = field(repr=False)
     reference_sensor: str = ""
     noise_sd: dict = field(default_factory=dict)  # median training noise sd per sensor
+    inflation: float = 1.0  # covariance multiplier applied by guards
 
     @property
     def phys(self) -> PhysParams:
@@ -93,6 +94,7 @@ class FitResult:
             "notes": self.notes,
             "multistart": self.starts,
             "runtime_s": self.runtime_s,
+            "interval_inflation": self.inflation,
             "corr_phys": self.corr.round(3).to_dict(),
         }
 
@@ -242,6 +244,7 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
     n, k = J.shape
     chi2_red = float(2 * best.cost / max(n - k, 1))
     notes = []
+    inflation = 1.0  # variance factor applied by the guards below (1 = none)
     try:
         cov = np.linalg.inv(J.T @ J)
     except np.linalg.LinAlgError:
@@ -254,6 +257,7 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
             "intervals inflated by chi^2 and physics/noise model is suspect"
         )
         cov = cov * chi2_red
+        inflation *= chi2_red
     # Guard: serially correlated residuals mean either un-modelled structure (wrong physics,
     # drift) or dependent noise. Both make the independent-noise Laplace interval too narrow.
     rho, rho_z = residual_autocorr(prob.obs, prob.residual(theta))
@@ -264,6 +268,7 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
         if rho < 0.95:  # widen by the AR(1) variance factor
             infl = (1 + rho) / (1 - rho)
             cov = cov * infl
+            inflation *= infl
             msg += f"; intervals widened by AR(1) factor {infl:.2f}"
         notes.append(msg)
     se = np.sqrt(np.clip(np.diag(cov), 0, None))
@@ -328,6 +333,7 @@ def fit(experiments, reference_sensor: str, cfg: FitConfig | None = None) -> Fit
         cfg,
         reference_sensor,
         noise_sd,
+        inflation,
     )
 
 

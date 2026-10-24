@@ -1,0 +1,136 @@
+{
+  "estimates": {
+    "method": "fv_variable (weighted least squares, Laplace intervals)",
+    "params": {
+      "a0": 0.10656902039405489,
+      "beta": -0.40479151658677504,
+      "h": 0.3303444125513789
+    },
+    "raw_params": {
+      "a0": 0.10656902039405489,
+      "beta": -0.40479151658677504,
+      "h": 0.3303444125513789
+    },
+    "intervals": {
+      "a0": [
+        0.09978037360208973,
+        0.11335766718602004
+      ],
+      "beta": [
+        -0.4706539949659141,
+        -0.338929038207636
+      ],
+      "h": [
+        0.27229666775104844,
+        0.3883921573517094
+      ],
+      "b_S0": [
+        -0.018214683213155197,
+        -0.012930601943368638
+      ],
+      "b_S2": [
+        -0.006998146123263015,
+        0.001640785609346229
+      ],
+      "b_S3": [
+        -0.01160687291807895,
+        -0.003993689036816737
+      ],
+      "b_S4": [
+        -0.013431099690427686,
+        -0.005541262570116892
+      ],
+      "b_S5": [
+        0.009657977813523927,
+        0.02048089243954078
+      ]
+    },
+    "interval_type": "Gauss-Newton/Laplace (linearised) 95% Wald interval",
+    "withheld": [],
+    "offsets": {
+      "S0": -0.015572642578261919,
+      "S2": -0.0026786802569583926,
+      "S3": -0.007800280977447844,
+      "S4": -0.00948618113027229,
+      "S5": 0.015069435126532353,
+      "S1": 0.0
+    },
+    "status": "ok"
+  },
+  "status": "ok",
+  "provenance": {
+    "kind": "evaluate",
+    "timestamp_utc": "2026-10-24T19:44:11+00:00",
+    "data_sha256": "a6e64ab1040db917277f8b07a07ed723472afd6d744d248c20fa9ed0dd2373db",
+    "config_hash": "17b87b57a6b3fab9",
+    "config": {
+      "bundle": "data/public_v1",
+      "split": {
+        "train": [
+          "E1",
+          "E2",
+          "E3"
+        ],
+        "val": [
+          "E4"
+        ],
+        "test": [
+          "E5"
+        ]
+      },
+      "keep_suspect": true,
+      "truth": "data/truth/public_v1_truth.json",
+      "output": "outputs/public",
+      "fv": {
+        "nx": 100,
+        "nt": 400,
+        "n_starts": 4,
+        "seed": 0,
+        "conf": 0.95
+      },
+      "pinn": {
+        "enabled": true,
+        "seeds": [
+          0,
+          1,
+          2
+        ],
+        "width": 48,
+        "depth": 4,
+        "n_colloc": 2000,
+        "adam_steps": 5000,
+        "lbfgs_iters": 300,
+        "lr": 0.002,
+        "lr_phys": 0.005,
+        "lr_final_frac": 0.1,
+        "freeze_phys_steps": 1500,
+        "w_obs": 1.0,
+        "w_pde": 1.0,
+        "w_ic": 1.0,
+        "w_bc": 1.0,
+        "adapt_steps": 2000,
+        "adapt_lbfgs": 150,
+        "dtype": "float32",
+        "threads": 4
+      }
+    },
+    "seed": 0,
+    "git": {
+      "commit": "34320ba",
+      "dirty": false
+    },
+    "hardware": {
+      "platform": "Windows-10-10.0.26200-SP0",
+      "machine": "AMD64",
+      "python": "3.11.9",
+      "cpu_count_logical": 8,
+      "cpu": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "torch": "2.12.0+cpu",
+      "torch_threads": 4,
+      "cuda": false,
+      "numpy": "2.4.3",
+      "scipy": "1.17.1"
+    },
+    "wall_time_s": 946.025
+  }
+}

@@ -129,6 +129,8 @@ def coverage(out: Path, quick=False):
                 r[f"{k}_z"] = (res.params[k] - truth["params"][k]) / max(
                     res.stderr[k], 1e-12
                 )
+                # same interval WITHOUT the guards' widening (what plain Laplace would report)
+                r[f"{k}_covers_raw"] = bool(abs(r[f"{k}_z"]) * np.sqrt(res.inflation) <= 1.959964)
             rows.append(r)
     df = pd.DataFrame(rows)
     summary = {}
@@ -137,6 +139,7 @@ def coverage(out: Path, quick=False):
         for k in PHYS:
             kk = int(g[f"{k}_covers"].sum())
             s[k] = {
+                "covered_without_guard": int(g[f"{k}_covers_raw"].sum()),
                 "covered": kk,
                 "n": len(g),
                 "rate": kk / len(g),
@@ -219,16 +222,17 @@ def _plot_coverage(df, out):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    groups = [("independent", df[df["rho"] == 0.0], "_covers"),
+              ("AR(1), no guard", df[df["rho"] == 0.6], "_covers_raw"),
+              ("AR(1), guard", df[df["rho"] == 0.6], "_covers")]
     fig, ax = plt.subplots(figsize=(5, 3))
-    for j, rho in enumerate(sorted(df["rho"].unique())):
-        g = df[df["rho"] == rho]
-        rates = [g[f"{k}_covers"].mean() for k in PHYS]
-        ax.bar(np.arange(3) + 0.38 * j, rates, 0.36, label=f"AR(1) rho={rho}")
+    for j, (label, g, col) in enumerate(groups):
+        ax.bar(np.arange(3) + 0.27 * j, [g[f"{k}{col}"].mean() for k in PHYS], 0.25, label=label)
     ax.axhline(0.95, color="k", ls="--", lw=1)
-    ax.set_xticks(np.arange(3) + 0.19, PHYS)
+    ax.set_xticks(np.arange(3) + 0.27, PHYS)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("95% interval coverage")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=7, loc="lower right")
     fig.tight_layout()
     fig.savefig(out / "coverage.png", dpi=150)
     plt.close(fig)
@@ -508,3 +512,18 @@ def _predicted_sd(pilot, exps, reference, cfg):
         "h": float(sd["h"]),
         "logdet": float(logdet),
     }
+
+
+def diagnosis_validation(out: Path, quick=False):
+    """Frozen diagnosis rules on synthetic bundles with KNOWN, clearly-sized faults."""
+    from .diagnose import validate_rules
+
+    return validate_rules(Path(out) / "diagnosis_validation", quick=quick)
+
+
+def diagnosis_sweep(out: Path, quick=False):
+    """Frozen diagnosis rules on smaller faults (detection limits) + fault-free nulls."""
+    from .diagnose import null_runs, sensitivity_sweep
+
+    null_runs(Path(out) / "diagnosis_null", n=3 if quick else 10)
+    return sensitivity_sweep(Path(out) / "diagnosis_sweep", replicates=1 if quick else 2)

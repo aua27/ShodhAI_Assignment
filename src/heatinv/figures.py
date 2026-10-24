@@ -99,9 +99,17 @@ def diagnosis(path="outputs/diagnosis/diagnosis.json"):
     plt.close(fig)
 
 
+def study_plots():
+    """The Stage-3 studies draw their own plots; copy them next to the others for the report."""
+    import shutil
+
+    for src in ("outputs/studies/ablation/ablation.png", "outputs/studies/coverage/coverage.png"):
+        shutil.copy(src, OUT / Path(src).name)
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    for f in (refinement, val_predictions, pinn_traces, diagnosis):
+    for f in (refinement, val_predictions, pinn_traces, diagnosis, study_plots):
         try:
             f()
             print("ok", f.__name__)
