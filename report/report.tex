@@ -230,7 +230,7 @@ cell crashed the loader; the smoke run failed on a fresh clone), all fixed.
 
 \textbf{Compute.} Laptop i7-1165G7 (4 cores), 16\,GB, no GPU, 4 torch threads. FV fit \FvFitSec\,s;
 PINN \PinnTrainSec\,s/seed + \PinnAdaptSec\,s physics-only adaptation; full public evaluation \EvalWall\,min;
-CPU smoke run of every stage \SmokeMin\,min (\SmokeOk; budget 10\,min).
+CPU smoke run of every stage \SmokeSec\,s (\SmokeOk; budget 10\,min) on a free 2-vCPU Linux cloud runner (GitHub Actions, clean install from the lock file; \NTests\ tests also pass there); on the laptop it is load-dependent (measured: 205\,s idle for the earlier, larger version; 469\,s for the current one with other applications running).
 
 \section{Claims, limitations, time}
 \textbf{Supported\syn:} FV recovery with calibrated intervals under the stated noise model; $h$ is the

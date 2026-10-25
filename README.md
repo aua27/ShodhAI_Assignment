@@ -26,7 +26,7 @@ pip install -r requirements-lock.txt   # exact versions of every package (tested
 # (requirements.txt pins only the direct dependencies; transitive ones may then drift)
 pip install -e . --no-deps
 
-python -m heatinv smoke                                   # every stage, reduced size (~3.5 min CPU; budget 10)
+python -m heatinv smoke                                   # every stage, reduced size (97 s on a 2-vCPU cloud runner; budget 10 min)
 python -m heatinv evaluate --config configs/public.yaml   # THE public evaluation command
 pytest -q                                                 # 58 focused checks (~3 min)
 ```
@@ -47,7 +47,9 @@ pytest -q                                                 # 58 focused checks (~
 no GPU used, Windows 11, Python 3.11.9, torch 2.12.0+cpu, 4 torch threads.
 Measured (see `results/public/results.json` provenance and `outputs/smoke/smoke.json`): FV fit ~6 s;
 one PINN seed (5000 Adam + 300 L-BFGS) ~4 min + ~1 min physics-only adaptation per seed;
-full `evaluate` incl. 3 PINN seeds ~16 min; smoke ~3.5 min; all studies ~27 min; `pytest` ~3 min.
+full `evaluate` incl. 3 PINN seeds ~16 min; smoke 97 s on a clean 2-vCPU GitHub Actions runner
+(`results/smoke_cloud_github_actions.json`; re-run via the `cpu-smoke` workflow) and load-dependent on the
+laptop (measured 205 s idle for an earlier, larger version; 469 s for the current one with other apps running); all studies ~27 min; `pytest` ~3 min.
 Memory < 1 GB. GPU not needed.
 
 **Reproduce everything** (about 50 min):
