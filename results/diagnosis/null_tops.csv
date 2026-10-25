@@ -1,0 +1,11 @@
+i,verdict,top_kind,where,top_delta_chi2,chi2_red
+0,no_fault_detected,sensor_drift,S2,6.700535545774528,0.9856026960863907
+1,no_fault_detected,sensor_drift,S2,3.1147908638101853,0.9497675937397343
+2,no_fault_detected,sensor_drift,S3,5.78272588078346,0.9891503841719743
+3,no_fault_detected,sensor_drift,S4,2.8222853022874688,1.0659156159998808
+4,no_fault_detected,sensor_drift,S5,3.271812389686488,0.9815282281332337
+5,no_fault_detected,sensor_drift,S4,6.834223826988705,1.0489844399468684
+6,no_fault_detected,heat_source,xc=0.75,4.003938865852888,1.0813650860105068
+7,no_fault_detected,heat_source,xc=0.75,0.9004310191927516,1.0768737017449788
+8,no_fault_detected,sensor_drift,S3,1.2485618026131533,1.0342324039458275
+9,no_fault_detected,sensor_drift,S5,0.61814692385542,0.9401047420199838

@@ -1,0 +1,112 @@
+{
+  "all_pass": true,
+  "checks": {
+    "deterministic_restart": {
+      "pass": true,
+      "max_param_diff": 0.0,
+      "interrupted": "simulated interruption at step 250",
+      "resumed_events": [
+        {
+          "step": 200,
+          "event": "resumed_from_checkpoint"
+        }
+      ],
+      "params_A": {
+        "a0": 0.0647512823343277,
+        "beta": -0.22835981845855713,
+        "h": 0.2702353000640869
+      },
+      "params_B": {
+        "a0": 0.0647512823343277,
+        "beta": -0.22835981845855713,
+        "h": 0.2702353000640869
+      }
+    },
+    "incompatible_checkpoint_refused": {
+      "pass": true,
+      "rejections": [
+        {
+          "file": "ckpt_0000300.pt",
+          "reason": "fingerprint mismatch on ['config']"
+        },
+        {
+          "file": "ckpt_0000200.pt",
+          "reason": "fingerprint mismatch on ['config']"
+        },
+        {
+          "file": "ckpt_0000100.pt",
+          "reason": "fingerprint mismatch on ['config']"
+        }
+      ]
+    },
+    "corrupt_checkpoint_skipped": {
+      "pass": true,
+      "rejections": [
+        {
+          "file": "ckpt_9999999.pt",
+          "reason": "unreadable: RuntimeError"
+        }
+      ]
+    },
+    "divergence_recorded_and_recovered": {
+      "pass": true,
+      "events": [
+        {
+          "step": 150,
+          "event": "non_finite_loss",
+          "action": "rollback+halve_lr"
+        }
+      ],
+      "final_status": "failed"
+    }
+  },
+  "provenance": {
+    "kind": "restart_check",
+    "timestamp_utc": "2026-10-24T17:38:06+00:00",
+    "data_sha256": "a6e64ab1040db917277f8b07a07ed723472afd6d744d248c20fa9ed0dd2373db",
+    "config_hash": "9f981764abed7257",
+    "config": {
+      "width": 24,
+      "depth": 3,
+      "n_colloc": 400,
+      "n_ic": 64,
+      "n_bc": 64,
+      "adam_steps": 300,
+      "lr": 0.002,
+      "lr_phys": 0.005,
+      "freeze_phys_steps": 100,
+      "lbfgs_iters": 20,
+      "resample_every": 100,
+      "w_obs": 1.0,
+      "w_pde": 1.0,
+      "w_ic": 1.0,
+      "w_bc": 1.0,
+      "sigma_ref": null,
+      "dtype": "float32",
+      "seed": 0,
+      "adapt_steps": 2000,
+      "adapt_lbfgs": 150,
+      "ckpt_every": 100,
+      "threads": 2,
+      "fail_obs_loss": 4.0
+    },
+    "seed": 0,
+    "git": {
+      "commit": "9494b14",
+      "dirty": true
+    },
+    "hardware": {
+      "platform": "Windows-10-10.0.26200-SP0",
+      "machine": "AMD64",
+      "python": "3.11.9",
+      "cpu_count_logical": 8,
+      "cpu": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "torch": "2.12.0+cpu",
+      "torch_threads": 2,
+      "cuda": false,
+      "numpy": "2.4.3",
+      "scipy": "1.17.1"
+    },
+    "wall_time_s": 39.211
+  }
+}

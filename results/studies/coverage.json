@@ -1,0 +1,117 @@
+{
+  "summary": {
+    "rho=0.0": {
+      "a0": {
+        "covered_without_guard": 20,
+        "covered": 20,
+        "n": 20,
+        "rate": 1.0,
+        "wilson95": [
+          0.8388698745050667,
+          1.0
+        ],
+        "z_sd": 0.7373391271222531
+      },
+      "beta": {
+        "covered_without_guard": 20,
+        "covered": 20,
+        "n": 20,
+        "rate": 1.0,
+        "wilson95": [
+          0.8388698745050667,
+          1.0
+        ],
+        "z_sd": 0.7618752355334626
+      },
+      "h": {
+        "covered_without_guard": 20,
+        "covered": 20,
+        "n": 20,
+        "rate": 1.0,
+        "wilson95": [
+          0.8388698745050667,
+          1.0
+        ],
+        "z_sd": 0.7711632785660282
+      }
+    },
+    "rho=0.6": {
+      "a0": {
+        "covered_without_guard": 18,
+        "covered": 19,
+        "n": 20,
+        "rate": 0.95,
+        "wilson95": [
+          0.7638641064874331,
+          0.9911187805671268
+        ],
+        "z_sd": 0.7887639742855973
+      },
+      "beta": {
+        "covered_without_guard": 18,
+        "covered": 20,
+        "n": 20,
+        "rate": 1.0,
+        "wilson95": [
+          0.8388698745050667,
+          1.0
+        ],
+        "z_sd": 0.6786011581052377
+      },
+      "h": {
+        "covered_without_guard": 15,
+        "covered": 20,
+        "n": 20,
+        "rate": 1.0,
+        "wilson95": [
+          0.8388698745050667,
+          1.0
+        ],
+        "z_sd": 0.8370270399977708
+      }
+    },
+    "noise_redraw": {
+      "a0": {
+        "empirical_sd_over_redraws": 0.00254614912084771,
+        "mean_laplace_sd": 0.0020290874135728016
+      },
+      "beta": {
+        "empirical_sd_over_redraws": 0.033198959887432204,
+        "mean_laplace_sd": 0.026738133899809897
+      },
+      "h": {
+        "empirical_sd_over_redraws": 0.007887359435541452,
+        "mean_laplace_sd": 0.006132515733213212
+      }
+    },
+    "notes": "20 datasets per noise model; Wilson 95% bands on the coverage rate are wide at this sample size -- treat as a sanity check, not a calibration certificate."
+  },
+  "provenance": {
+    "kind": "study:coverage",
+    "timestamp_utc": "2026-10-24T19:50:49+00:00",
+    "data_sha256": null,
+    "config_hash": "86c2abbb4444df37",
+    "config": {
+      "n": 20,
+      "quick": false
+    },
+    "seed": null,
+    "git": {
+      "commit": "1b9cd3c",
+      "dirty": false
+    },
+    "hardware": {
+      "platform": "Windows-10-10.0.26200-SP0",
+      "machine": "AMD64",
+      "python": "3.11.9",
+      "cpu_count_logical": 8,
+      "cpu": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "torch": "2.12.0+cpu",
+      "torch_threads": 4,
+      "cuda": false,
+      "numpy": "2.4.3",
+      "scipy": "1.17.1"
+    },
+    "wall_time_s": 174.653
+  }
+}

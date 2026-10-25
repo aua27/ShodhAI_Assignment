@@ -1,0 +1,64 @@
+{
+  "mean_by_variant": [
+    {
+      "variant": "correct_model",
+      "train_rmse_noisy": 0.010513444383931949,
+      "val_rmse_noisy": 0.0104334543354312,
+      "val_rmse_latent": 0.0011743917104969502,
+      "a0_err": 0.0007196611749051812,
+      "beta_err": 0.013285820180792052,
+      "h_err": 0.0004197709409914874,
+      "offset_mae": 0.0009690423537997266,
+      "chi2_red": 0.9804695404684777
+    },
+    {
+      "variant": "correct_physics_offsets_zero",
+      "train_rmse_noisy": 0.02282433349001817,
+      "val_rmse_noisy": 0.022989942755494364,
+      "val_rmse_latent": 0.005176910750175046,
+      "a0_err": 0.003633579279025334,
+      "beta_err": 0.08298581697217262,
+      "h_err": -0.03749629446965748,
+      "offset_mae": 0.0,
+      "chi2_red": 5.030889718077963
+    },
+    {
+      "variant": "wrong_physics_offsets_free",
+      "train_rmse_noisy": 0.014982736109544748,
+      "val_rmse_noisy": 0.01818262836010081,
+      "val_rmse_latent": 0.01750203243729854,
+      "a0_err": -0.015901250518783265,
+      "beta_err": -0.6,
+      "h_err": -0.01094050961312118,
+      "offset_mae": 0.007104085074678151,
+      "chi2_red": 2.090697337198436
+    }
+  ],
+  "provenance": {
+    "kind": "study:bias",
+    "timestamp_utc": "2026-10-24T19:47:53+00:00",
+    "data_sha256": null,
+    "config_hash": "903c540936fe762e",
+    "config": {
+      "n": 5
+    },
+    "seed": null,
+    "git": {
+      "commit": "1b9cd3c",
+      "dirty": false
+    },
+    "hardware": {
+      "platform": "Windows-10-10.0.26200-SP0",
+      "machine": "AMD64",
+      "python": "3.11.9",
+      "cpu_count_logical": 8,
+      "cpu": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "torch": "2.12.0+cpu",
+      "torch_threads": 4,
+      "cuda": false,
+      "numpy": "2.4.3",
+      "scipy": "1.17.1"
+    },
+    "wall_time_s": 56.007
+  }
+}

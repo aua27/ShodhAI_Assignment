@@ -1,0 +1,59 @@
+{
+  "params": {
+    "a0": 0.07,
+    "beta": 0.5,
+    "h": 0.2
+  },
+  "mms_refinement": {
+    "nx": [
+      25,
+      50,
+      100,
+      200
+    ],
+    "nt": [
+      100,
+      200,
+      400,
+      800
+    ],
+    "rmse": [
+      0.0005214679328148279,
+      0.0001309757037728291,
+      3.279270540099841e-05,
+      8.2058577462056e-06
+    ],
+    "observed_order": [
+      1.9932793242110096,
+      1.997852379855214,
+      1.998648879586858
+    ]
+  },
+  "steady_state_max_abs_error": 2.9384568110968345e-06,
+  "energy_balance_max_abs_defect": 1.5355772206037974e-16,
+  "provenance": {
+    "kind": "verify",
+    "timestamp_utc": "2026-10-24T17:30:39+00:00",
+    "data_sha256": null,
+    "config_hash": "44136fa355b3678a",
+    "config": {},
+    "seed": null,
+    "git": {
+      "commit": "7aa45a7",
+      "dirty": true
+    },
+    "hardware": {
+      "platform": "Windows-10-10.0.26200-SP0",
+      "machine": "AMD64",
+      "python": "3.11.9",
+      "cpu_count_logical": 8,
+      "cpu": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "torch": "2.12.0+cpu",
+      "torch_threads": 4,
+      "cuda": false,
+      "numpy": "2.4.3",
+      "scipy": "1.17.1"
+    },
+    "wall_time_s": 3.084
+  }
+}

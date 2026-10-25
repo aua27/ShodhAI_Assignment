@@ -1,0 +1,13 @@
+true_fault,replicate,verdict,top_delta_chi2,chi2_red_base
+none,0,no_fault_detected,2.5080725272824793,0.9523909543287363
+none,1,no_fault_detected,5.89669757124318,1.115502695818595
+none,2,no_fault_detected,3.8198646365440254,0.9838497352855442
+sensor_drift,0,suspected:sensor_drift,341.5685847738173,1.6068292556920787
+sensor_drift,1,suspected:sensor_drift,89.8418300023751,1.2256789497208667
+sensor_drift,2,suspected:sensor_drift,354.6066221257224,1.573026598195912
+heat_source,0,suspected:heat_source,8047.213521592491,16.151292207917304
+heat_source,1,suspected:heat_source,9544.27189912403,17.811802134811735
+heat_source,2,suspected:heat_source,3635.942878740768,7.2292194252322695
+boundary_input_error,0,suspected:boundary_input_error,157.5784298011124,1.3056880819265977
+boundary_input_error,1,suspected:boundary_input_error,300.2496738097519,1.5599131940313389
+boundary_input_error,2,suspected:boundary_input_error,130.71402537374001,1.257545953675613
