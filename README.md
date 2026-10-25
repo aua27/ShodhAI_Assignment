@@ -21,7 +21,10 @@ diagnosis and recovery studies. Report: [`report/report.pdf`](report/report.pdf)
 
 ```bash
 python -m venv .venv
-.venv/Scripts/activate            # Windows;  source .venv/bin/activate on Linux/macOS
+# activate:  PowerShell  .venv\Scripts\Activate.ps1   (needs execution policy RemoteSigned or looser)
+#            Git Bash    source .venv/Scripts/activate (without `source` it silently does nothing)
+#            Linux/macOS source .venv/bin/activate
+# or skip activation and call .venv/Scripts/python (Windows) / .venv/bin/python instead of python
 pip install -r requirements-lock.txt   # exact versions of every package (tested on a fresh clone)
 # (requirements.txt pins only the direct dependencies; transitive ones may then drift)
 pip install -e . --no-deps
@@ -41,26 +44,30 @@ pytest -q                                                 # 58 focused checks (~
 | `python -m heatinv study diagnosis_validation\|diagnosis_sweep --out outputs` | frozen diagnosis rules on known faults / fault sizes / fault-free nulls | `outputs/diagnosis_*/` |
 | `python -m heatinv diagnose --bundle DIR` | Stage 4 diagnosis, frozen rules `configs/diagnosis_rules.yaml` | `outputs/diagnosis/diagnosis.json` |
 | `python -m heatinv restart` | checkpoint resume / refusal / divergence checks | `outputs/restart/restart_check.json` |
-| `python -m heatinv generate --spec configs/synth_public.yaml` | rebuild the synthetic public bundle | `data/public_v1/` |
+| `python -m heatinv generate --spec configs/synth_public.yaml` | rebuild the synthetic public bundle (overwrites it in place; byte-identical on Windows; on Linux/macOS the files get LF line endings, so the content is identical but git shows them modified and the data sha256 changes) | `data/public_v1/`, `data/truth/` |
 
 **Resources.** Reference machine: Lenovo laptop, Intel i7-1165G7 (4 cores / 8 threads), 16 GB RAM,
 no GPU used, Windows 11, Python 3.11.9, torch 2.12.0+cpu, 4 torch threads.
-Measured (see `results/public/results.json` provenance and `outputs/smoke/smoke.json`): FV fit ~6 s;
+Measured (see the provenance blocks in `results/`): FV fit ~6 s;
 one PINN seed (5000 Adam + 300 L-BFGS) ~4 min + ~1 min physics-only adaptation per seed;
 full `evaluate` incl. 3 PINN seeds ~16 min; smoke 169 s on a clean 2-vCPU GitHub Actions runner (AMD EPYC 7763; an earlier run on an EPYC 9V45 runner took 97 s)
 (`results/smoke_cloud_github_actions.json`; re-run via the `cpu-smoke` workflow) and load-dependent on the
 laptop (measured 205 s idle for an earlier, larger version; 469 s for the current one with other apps running); all studies ~27 min; `pytest` ~3 min.
 Memory (measured peaks, resident / committed): FV fit ~0.12 / 0.6 GB; full-size PINN run ~0.4 / 0.9 GB. GPU not needed.
 
-**Reproduce everything** (about 50 min):
+**Reproduce everything** (about 50 min; bash syntax, from the repo root):
 ```bash
 python -m heatinv verify && python -m heatinv evaluate
 for s in ablation bias coverage design; do python -m heatinv study $s; done
 python -m heatinv study diagnosis_validation --out outputs && python -m heatinv study diagnosis_sweep --out outputs
+python -m heatinv diagnose --bundle data/sealed_v1          # Fig. 3a (sealed blind test)
 python -m heatinv restart && python -m heatinv smoke
 python -m heatinv.figures && python report/make_numbers.py && (cd report && pdflatex report.tex)
 ```
+PowerShell: same lines, with the loop as `foreach ($s in "ablation","bias","coverage","design") { python -m heatinv study $s }`
+and the last step as `cd report; pdflatex report.tex; cd ..` (`&&` needs PowerShell 7).
 `report/make_numbers.py` writes every number in the report from these result files (no hand-typed numbers).
+Results land in `outputs/` (not committed); the copies cited by the report are committed under `results/`.
 
 **Agreed machine.** The brief's "agreed machine" was not specified; the reference laptop above is
 assumed (confirmation requested). The smoke run reports its own wall time and hardware.
