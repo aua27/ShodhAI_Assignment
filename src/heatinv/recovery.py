@@ -32,7 +32,7 @@ SMALL = PINNConfig(
     resample_every=100,
     ckpt_every=100,
     freeze_phys_steps=100,
-    threads=2,
+    threads=4,  # same as the default: a smaller value would leak into later stages (global torch setting)
 )
 
 

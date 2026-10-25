@@ -24,6 +24,7 @@ timed and reported separately.
 from __future__ import annotations
 
 import copy
+import os
 import time
 from dataclasses import asdict, dataclass
 from typing import Optional
@@ -179,7 +180,8 @@ class Trainer:
     ):
         self.cfg = cfg
         self.dtype = getattr(torch, cfg.dtype)
-        torch.set_num_threads(cfg.threads)
+        # Global torch setting; capped at the machine's cores so small cloud runners are not oversubscribed.
+        torch.set_num_threads(max(1, min(cfg.threads, os.cpu_count() or 1)))
         self.reference = reference
         sensors = sorted({s for e in experiments for s in e.obs["sensor_id"]})
         offset_sensors = [s for s in sensors if s != reference]

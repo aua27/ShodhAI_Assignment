@@ -1,0 +1,32 @@
+# CPU smoke run + test suite on a clean, free GitHub-hosted Linux runner.
+# Trigger: Actions tab -> "cpu-smoke" -> Run workflow   (or: gh workflow run cpu-smoke)
+name: cpu-smoke
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Machine
+        run: |
+          nproc; lscpu | grep -E "Model name|^CPU\(s\)|Thread"; free -h
+      - name: Install (exact lock file)
+        run: |
+          pip install -r requirements-lock.txt
+          pip install -e . --no-deps
+      - name: Tests
+        run: python -m pytest -q -p no:cacheprovider
+      - name: Smoke run (budget 10 min)
+        run: python -m heatinv smoke
+      - name: Keep smoke.json
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-json
+          path: outputs/smoke/smoke.json

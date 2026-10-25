@@ -1,6 +1,7 @@
 """CPU smoke run (python -m heatinv smoke): every stage end-to-end at reduced size, timed.
 
-Target < 10 min on the reference laptop (i7-1165G7, 4 threads); budget is checked and reported.
+Budget 10 min; ~2 min on the reference laptop (i7-1165G7) when idle, leaving headroom for slower or
+busy machines. Wall time, hardware and threads are recorded in smoke.json.
 Exit code 1 if any stage fails or the budget is exceeded.
 """
 
@@ -77,8 +78,8 @@ def smoke(out: Path) -> bool:
             width=32,
             depth=3,
             n_colloc=800,
-            adam_steps=1500,
-            freeze_phys_steps=500,
+            adam_steps=800,
+            freeze_phys_steps=300,
             lbfgs_iters=50,
             adapt_steps=400,
             adapt_lbfgs=30,

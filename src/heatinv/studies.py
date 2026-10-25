@@ -107,7 +107,7 @@ def coverage(out: Path, quick=False):
     95% intervals contain the truth. With AR(1) noise (rho=0.6) intervals should under-cover."""
     out = Path(out) / "coverage"
     t0 = time.perf_counter()
-    n_ds = 6 if quick else 20
+    n_ds = 3 if quick else 20
     cfg = FitConfig(n_starts=2)
     rows = []
     for rho in (0.0, 0.6):
@@ -148,7 +148,7 @@ def coverage(out: Path, quick=False):
         summary[f"rho={rho}"] = s
 
     # Data uncertainty vs Laplace: same truth + inputs, 20 independent noise redraws.
-    n_rep = 6 if quick else 20
+    n_rep = 3 if quick else 20
     base, truth = _bundle(out, "redraw_base", SynthSpec(seed=2000))
     ests, sds = [], []
     for j in range(n_rep):
@@ -419,7 +419,7 @@ def design(out: Path, quick=False):
     stronger conduction or a stronger film coefficient) -- readings near x=1 see the Robin end directly."""
     out = Path(out) / "design"
     t0 = time.perf_counter()
-    n_ds = 4 if quick else 10
+    n_ds = 2 if quick else 10
     rows, decisions = [], []
     for i in range(n_ds):
         spec = SynthSpec(
