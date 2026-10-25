@@ -130,7 +130,7 @@ data/          public_v1/ (synthetic bundle)  truth/ (synthetic truth, scoring o
                sealed_v1/ + sealed_v1_truth.json (Stage-4 blind test; truth hash in manifest)
 results/       final public evaluation outputs; sealed-diagnosis verdict; archived v1/v2 runs
 tests/         58 tests: solver, data validation, inverse, restart, black-box, white-box
-docs/          evidence/ (PINN development log, failed runs), WALKTHROUGH.md
+docs/          evidence/ (PINN development log, failed runs)
 report/        report.pdf (5 pages incl. 1-page AI appendix), report.tex, make_numbers.py, figures/
 ```
 
