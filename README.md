@@ -60,7 +60,7 @@ Memory (measured peaks, resident / committed): FV fit ~0.12 / 0.6 GB; full-size 
 python -m heatinv verify && python -m heatinv evaluate
 for s in ablation bias coverage design; do python -m heatinv study $s; done
 python -m heatinv study diagnosis_validation --out outputs && python -m heatinv study diagnosis_sweep --out outputs
-python -m heatinv diagnose --bundle data/sealed_v1          # Fig. 3a (sealed blind test)
+python -m heatinv diagnose --bundle data/sealed_v1          # Fig. 5 (sealed blind test)
 python -m heatinv restart && python -m heatinv smoke
 python -m heatinv.figures && python report/make_numbers.py && (cd report && pdflatex report.tex)
 ```

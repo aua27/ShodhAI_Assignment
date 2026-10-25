@@ -37,11 +37,22 @@ def val_predictions(out="outputs/public", bundle="data/public_v1"):
     from .data import load_bundle
 
     e4 = load_bundle(bundle).experiments["E4"]
-    preds = {m: pd.read_csv(Path(out) / f"val_predictions_fv_{m}.csv") for m in ("variable", "constant_baseline")}
+    preds = {
+        m: pd.read_csv(Path(out) / f"val_predictions_fv_{m}.csv")
+        for m in ("variable", "constant_baseline")
+    }
     fig, axes = plt.subplots(1, 3, figsize=(9, 2.6))
     for ax, s in zip(axes, ["S0", "S3", "S5"]):
         o = e4.obs[e4.obs["sensor_id"] == s]
-        ax.errorbar(o["t"], o["y"], yerr=o["noise_sd"], fmt=".", ms=3, color="0.5", label="readings (held out)")
+        ax.errorbar(
+            o["t"],
+            o["y"],
+            yerr=o["noise_sd"],
+            fmt=".",
+            ms=3,
+            color="0.5",
+            label="readings (held out)",
+        )
         for (m, p), c in zip(preds.items(), ("C0", "C3")):
             p = p[p["sensor_id"] == s].sort_values("t")
             ax.plot(p["t"], p["y_pred"], color=c, label=f"FV {m}")
@@ -91,7 +102,10 @@ def diagnosis(path="outputs/diagnosis/diagnosis.json"):
     t["label"] = t["kind"].str.replace("_", " ") + "\n" + t["where"].astype(str)
     fig, ax = plt.subplots(figsize=(6.5, 2.6))
     ax.bar(range(len(t)), t["delta_chi2"].clip(lower=0.1))
-    ax.axhline(25, color="k", ls="--", lw=1, label="frozen LRT threshold")
+    thr = r["provenance"]["config"][
+        "lrt_threshold"
+    ]  # the rules this verdict was made under
+    ax.axhline(thr, color="k", ls="--", lw=1, label=f"frozen LRT threshold ({thr})")
     ax.set_yscale("log")
     ax.set_xticks(range(len(t)), t["label"], fontsize=6, rotation=60)
     ax.set_ylabel("chi^2 drop")
@@ -106,7 +120,10 @@ def study_plots():
     """The Stage-3 studies draw their own plots; copy them next to the others for the report."""
     import shutil
 
-    for src in ("outputs/studies/ablation/ablation.png", "outputs/studies/coverage/coverage.png"):
+    for src in (
+        "outputs/studies/ablation/ablation.png",
+        "outputs/studies/coverage/coverage.png",
+    ):
         shutil.copy(src, OUT / Path(src).name)
 
 

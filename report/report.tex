@@ -1,280 +1,231 @@
 \documentclass[10pt]{article}
-\usepackage[a4paper,margin=1.7cm]{geometry}
+\usepackage[a4paper,margin=1.8cm]{geometry}
 \usepackage{graphicx,booktabs,amsmath,amssymb,hyperref,xcolor,caption,enumitem,multirow}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\captionsetup{font=small,skip=2pt}
+\captionsetup{font=small,skip=3pt}
 \setlist{nosep,leftmargin=*}
-\setlength{\parskip}{2pt}
+\setlength{\parskip}{3pt}
 \setlength{\parindent}{0pt}
 \graphicspath{{figures/}}
 \input{numbers.tex}
 \newcommand{\syn}{\textsuperscript{\textsc{syn}}}
 
-\title{\vspace{-1.2cm}Inverse Heat Modelling and Scientific Diagnostics\\\large AI/ML Engineer Intern take-home --- report}
-\author{Adit Unnikrishnan}
-\date{25 October 2026 \quad (code: \texttt{github.com/aua27/ShodhAI\_Assignment}, commit \texttt{\EvalCommit})}
+\title{\vspace{-1.4cm}Inverse Heat Modelling and Scientific Diagnostics}
+\author{Adit U A \quad \small\texttt{github.com/aua27/ShodhAI\_Assignment}}
+\date{\vspace{-0.6cm}}
 
 \begin{document}
 \maketitle
-\vspace{-0.8cm}
-
-\paragraph{Data status (read first).} Only the assignment PDF was received; the versioned data
-bundle and the Stage-4 diagnosis dataset were not attached (requested by email). Every result below
-is therefore on \textbf{synthetic} data generated to the schema the brief describes, with ground
-truth stored separately and read only for scoring; such numbers carry the mark~\syn. The pipeline
-takes any bundle in the documented format (README), so a real bundle needs a one-line config change.
 
 \section{Formulation}
 \textbf{Model.} $u_t=\partial_x[a(x)u_x]$, $a=a_0e^{\beta(2x-1)}$, $u(0,t)=g(t)$,
-$-a(1)u_x(1,t)=h[u(1,t)-T_a(t)]$, readings $y=u(x_s,t)+b_s+\varepsilon$, $b_{\rm ref}=0$. Physically:
-Fourier conduction with a graded conductivity ($a_0$ = mid-rod value, $e^{2\beta}$ = right/left
-ratio), a clamped heater at $x{=}0$ and Newton cooling at $x{=}1$. With $a\approx0.07$--$0.15$ (public bundle\syn) heat
-diffuses only $\sqrt{at}\approx0.3$--$0.4$ in the experiment, so the Robin end is seen mainly by the right-most sensors:
-the a-priori reason $h$ is the hardest parameter. Heat leaving at $x{=}1$ crosses conduction and film
-resistances in series, so $a_0$, $h$ and offsets can trade off.
+$-a(1)u_x(1,t)=h[u(1,t)-T_a(t)]$; readings $y=u(x_s,t)+b_s+\varepsilon$, $b_{\rm ref}=0$.
+$a_0$ is the mid-rod conductivity, $e^{2\beta}$ the right/left ratio; a heater clamps $x{=}0$ and Newton
+cooling acts at $x{=}1$. Heat spreads only $\sqrt{at}\approx0.3$--$0.4$ in an experiment, so only the
+right-most sensors see the Robin end: $h$ is expected to be the hardest parameter, and it trades off with
+conduction and offsets.
 
-\textbf{Inverse problem.} $\theta=(a_0,\beta,h,b_s)$, all box-constrained to the brief's ranges;
-minimise $\tfrac12\sum_k[(u_k(\theta)+b_{s(k)}-y_k)/\sigma_k]^2$ (Gaussian likelihood with the
-supplied noise sd). Offsets are \emph{persistent} per sensor across experiments, enter linearly
-(exact Jacobian columns), and the reference sensor anchors the level (without it offsets and smooth
-physics changes exchange misfit). Uncertainty: Gauss--Newton/Laplace covariance $(J^\top J)^{-1}$ ---
-local, linearised, conditional on the model --- with guards (\S5) that widen or withhold it.
-\textbf{Assumptions:} independent Gaussian noise with known sd (tested: residual autocorrelation),
-model form correct (tested: nested-model and fault tests), piecewise-linear inputs.
-\textbf{Data audit.} Rows are cleaned explicitly and logged with their raw CSV line: in the public
-bundle\syn\ \ClnBad\ \texttt{bad}-flagged, \ClnConflict\ conflicting repeated-ID, \ClnDup\ exact
-duplicate, \ClnMissing\ missing and \ClnTime\ out-of-domain rows were dropped; \ClnSuspect\
-\texttt{suspect} rows kept and logged. Identity key $=$(experiment, obs\_id); conflicting copies are
-all dropped (no silent tie-break). Split: fit E1--E3, validate E4 (labels never reach a fitting
-routine --- tested by corrupting them), predict E5 from inputs only. Methods were frozen at commit
-\texttt{\FreezeCommit}; later commits changed only status rules, input validation and dead code, and
-all estimates are \RunsIdentical\ across the three evaluation runs (archived in \texttt{results/}).
+\textbf{Inverse problem.} $\theta=(a_0,\beta,h,b_s)$ within the brief's bounds; minimise
+$\tfrac12\sum_k[(u_k(\theta)+b_{s(k)}-y_k)/\sigma_k]^2$, the Gaussian likelihood with the supplied noise sd.
+Offsets are persistent per sensor and enter linearly; the reference sensor fixes the level.
+Uncertainty: Laplace covariance $(J^\top J)^{-1}$, 95\% Wald intervals (local, conditional on the model).
+Assumptions --- independent Gaussian noise with known sd, correct model form, piecewise-linear inputs --- are
+each tested by a guard (\S5).
+
+\textbf{Data.} All data are synthetic (no data bundle was supplied), generated to the brief's schema with
+truth kept in a separate file read only for scoring; results on them are marked\syn. Cleaning is explicit
+and logged per row: \ClnBad\ \texttt{bad}, \ClnConflict\ conflicting repeated-ID (all copies), \ClnDup\
+duplicate, \ClnMissing\ missing and \ClnTime\ out-of-domain rows dropped; \ClnSuspect\ \texttt{suspect}
+kept. Fit E1--E3, validate E4 (labels never reach fitting), predict E5 from its inputs only. Methods were
+frozen at \texttt{\FreezeCommit}; estimates are \RunsIdentical\ across the three evaluation runs.
 
 \section{Stage 1 --- reference solver and inference}
-Cell-centred finite volumes with exact face diffusivities (conservative: energy changes only through
-boundary fluxes), the Robin end as half-cell conduction in series with $h$, Crank--Nicolson with
-Rannacher start-up (four backward-Euler quarter steps; avoids CN ringing when $f(0)\neq g(0)$).
-\textbf{Independent verification:} (i) manufactured solution with a hand-derived source --- observed
-order \OrdMin--\OrdMax\ under joint space--time refinement (Fig.~\ref{fig:ver}a), RMSE \MmsErrHundred\ at
-the production grid (100 cells, 400 steps) vs noise $\approx10^{-2}$; (ii) steady state against the closed
-form, error \SteadyErr; (iii) discrete energy balance to \EnergyDefect; (iv) maximum principle with a
-discontinuous corner. Synthetic data are generated on a $4\times$ finer grid than inference (no
-``inverse crime''). Fitting: bounded trust-region least squares, multistart (Latin hypercube), central
-differences for $(a_0,\beta,h)$. Known-parameter recovery is a test on separate synthetic data (all
-three within $4\sigma$, offsets within 0.01); coverage over 20 datasets is in \S4.
+Cell-centred finite volumes (conservative), Robin end as half-cell conduction in series with $h$,
+Crank--Nicolson with Rannacher start-up. \textbf{Verification}, independent of the inverse code:
+manufactured solution, order \OrdMin--\OrdMax\ (Fig.~\ref{fig:ver}a), RMSE \MmsErrHundred\ at the production
+grid ($100\times400$) vs noise $\approx10^{-2}$; closed-form steady state \SteadyErr; energy balance
+\EnergyDefect; maximum principle. Data are generated on a $4\times$ finer grid (no inverse crime).
+\textbf{Fitting:} bounded trust-region least squares, 4 Latin-hypercube starts. Known-parameter recovery is
+tested on separate synthetic data; coverage over 20 datasets is in \S4.
 
-\begin{table}[t]\small\centering
-\caption{Public bundle\syn: estimates (95\% Laplace intervals) and errors. Truth $a_0{=}\TrueA$,
-$\beta{=}\TrueB$, $h{=}\TrueH$. ``noisy'' = vs readings $y$; ``latent'' = vs noise-free $u$ at E5
-queries. RMSE pooled over all scored readings (weight 1 each). PINN: mean over \PinnNSeeds\ seeds, [min,max] across seeds (a spread, \emph{not} an interval).}
+\begin{table}[h]\small\centering
+\caption{Public bundle\syn. Truth $a_0{=}\TrueA$, $\beta{=}\TrueB$, $h{=}\TrueH$. Intervals 95\% Laplace.
+``noisy'' = vs readings, ``latent'' = vs noise-free $u$ at E5. PINN: mean of \PinnNSeeds\ seeds, [min,max]
+(a spread, not an interval).}
 \label{tab:main}
 \begin{tabular}{lccc}\toprule
- & FV, variable $a(x)$ (primary) & FV, constant $a$ (baseline) & inverse PINN\\\midrule
+ & FV, variable $a(x)$ (primary) & FV, constant $a$ & inverse PINN\\\midrule
 $a_0$ & \FvA\ [\FvALo, \FvAHi] & \CstA\ [\CstALo, \CstAHi] & \PinnA\ [\PinnAMin, \PinnAMax]\\
 $\beta$ & \FvB\ [\FvBLo, \FvBHi] & 0 (fixed) & \PinnB\ [\PinnBMin, \PinnBMax]\\
 $h$ & \FvH\ [\FvHLo, \FvHHi] & \CstH\ [\CstHLo, \CstHHi] & \PinnH\ [\PinnHMin, \PinnHMax]\\
 $\chi^2_\nu$ (train) & \FvChi & \CstChi & --- \\
 train RMSE (noisy) & \FvTrainRmse & \CstTrainRmse & \PinnTrainRmse\\
-val E4 RMSE (noisy) / 95\% cover. & \FvValRmse\ / \FvValCov & \CstValRmse\ / \CstValCov & \PinnValRmse\ / ---\\
-test E5 RMSE noisy / latent\syn & \FvTestNoisy\ / \FvTestLatent & \CstTestNoisy\ / \CstTestLatent & \PinnTestNoisy\ / \PinnTestLatent\\
-test latent-interval coverage\syn & \FvTestCovU & \CstTestCovU & ---\\
+val E4 RMSE / 95\% coverage & \FvValRmse\ / \FvValCov & \CstValRmse\ / \CstValCov & \PinnValRmse\ / ---\\
+test E5 RMSE noisy / latent & \FvTestNoisy\ / \FvTestLatent & \CstTestNoisy\ / \CstTestLatent & \PinnTestNoisy\ / \PinnTestLatent\\
+test latent-interval coverage & \FvTestCovU & \CstTestCovU & ---\\
 fit time (laptop CPU) & \FvFitSec\,s & \CstFitSec\,s & \PinnTrainSec\,s/seed + \PinnAdaptSec\,s adapt.\\
-energy-balance defect & \FvEnergy\ (discrete) & --- & \PinnEB\ (relative)\\
+energy-balance defect & \FvEnergy & --- & \PinnEB\ (relative)\\
 status (automatic) & \FvStatus & \CstStatus & \PinnNWeak/\PinnNSeeds\ weak\_evidence\\\bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Result (Table~\ref{tab:main}).} The variable model recovers all three parameters inside their
-intervals with $\chi^2_\nu{=}\FvChi$. The constant baseline is the cautionary case: its error against
-noisy readings is close to the primary (\CstTestNoisy\ vs \FvTestNoisy) yet its latent error is
-\CstTestLatent\ vs \FvTestLatent\ and its latent intervals cover the truth only \CstTestCovU\ of the
-time --- offsets absorb the missing gradient. It is rejected automatically by the nested test
-($\Delta\chi^2{=}\LrtBeta$, \S5).
+\textbf{Result.} The variable model recovers all three parameters inside their intervals
+($\chi^2_\nu{=}\FvChi$). The constant baseline is the cautionary case: almost the same error against noisy
+readings (\CstTestNoisy\ vs \FvTestNoisy) but $7\times$ the latent error (\CstTestLatent) and latent intervals
+covering the truth only \CstTestCovU\ of the time --- offsets absorb the missing gradient. The nested test
+rejects it ($\Delta\chi^2{=}\LrtBeta$; Fig.~\ref{fig:val}).
+
+\begin{figure}[!ht]\centering
+\includegraphics[width=\linewidth]{val_predictions}
+\caption{Held-out E4\syn: readings vs FV variable (blue) and constant (red) predictions with 95\% reading
+intervals. Both look plausible on readings.}\label{fig:val}
+\end{figure}
 
 \section{Stage 2 --- inverse PINN}
-\textbf{Design.} One $4{\times}48$ tanh MLP per experiment (inputs scaled to $[-1,1]$) --- tanh because the
-loss needs smooth second derivatives; one net per experiment because each has its own forcing while the
-physics is shared; small because the fields are smooth and CPU time is the budget; shared
-$(a_0,\beta,h)$ bounded by sigmoids, offsets by $0.03\tanh$. Losses in noise units (divided by the
-median sensor variance) so a constraint violated by one noise level costs about one misfitted reading:
-$L_{\rm obs}$ (whitened), $L_{\rm pde}$ with the \emph{conservative} operator by autograd
-(flux $=a(x)u_x$, then $\partial_x$flux --- the $a'(x)u_x$ term appears automatically; unit-tested against the
-hand-derived MMS source to $10^{-10}$), $L_{\rm ic}$, $L_{\rm bc}$ (Dirichlet + Robin). Uniform
-collocation (2000/experiment) resampled every 250 Adam steps, then L-BFGS on a \emph{fixed} set
-(resampling breaks its line search). Adam lr decays $10\times$; physics frozen for 1500 warm-up steps.
-Unseen experiments: physics-only adaptation (fresh field net, PDE+IC+BC, parameters frozen; timed: \PinnAdaptSec\,s/seed).
+\textbf{Design.} One $4{\times}48$ tanh MLP per training experiment (smooth second derivatives; each
+experiment has its own forcing, the physics is shared); $a_0,\beta,h$ bounded by sigmoids, offsets by
+$0.03\tanh$. Losses $L_{\rm obs},L_{\rm pde},L_{\rm ic},L_{\rm bc}$ are in noise units (divided by the median
+sensor variance, weights 1), so violating physics by one noise level costs about one misfitted reading.
+$L_{\rm pde}$ uses the conservative operator by autograd: flux $=a(x)u_x$, then $\partial_x$flux, so
+$a'(x)u_x$ appears automatically (tested against the hand-derived source to $10^{-10}$). 2000 uniform
+collocation points per experiment, resampled every 250 Adam steps; then L-BFGS on a fixed set. Physics is
+frozen for 1500 warm-up steps. Unseen experiments: physics-only adaptation, \PinnAdaptSec\,s/seed.
 
-\textbf{Development (dev bundle, one change per trial; \texttt{docs/evidence}).} (1) no warm-up: $h$
-collapsed onto its bound --- an untrained field makes the Robin term cheapest at $h\to0$ and the
-sigmoid saturates; (2) warm-up: $a_0,\beta$ correct, $h$ $3\times$ low with the right-most offset
-absorbing it; (3) $w_{\rm bc}{=}10$: hypothesis ``BC weight pins $h$'' \textbf{refuted} ($h$ worse);
-(4) $2\times$ steps: marginal; (5) $w_{\rm pde}{=}10$: worse (stiffer). Mechanism: soft constraints
-tolerate $\sim$1 noise level of physics error, enough for the field to bend between the last sensor
-($x{=}0.85$) and the Robin end so a wrong $h$ satisfies the BC. Tuning stopped there.
+\textbf{Development} (separate dev bundle, one change per trial, \texttt{docs/evidence}): no warm-up
+$\to$ $h$ collapsed onto its bound; warm-up $\to$ $a_0,\beta$ right, $h$ $3\times$ low; $w_{\rm bc}{=}10$
+$\to$ ``BC weight pins $h$'' refuted; more steps marginal; $w_{\rm pde}{=}10$ worse. Mechanism: soft
+constraints leave about one noise level of slack between the last sensor ($x{=}0.85$) and the Robin end,
+enough for the field to bend so a wrong $h$ satisfies the boundary condition. Tuning stopped there.
 
-\textbf{Result.} On the public bundle\syn\ the PINN reproduces the readings ($L_{\rm obs}{=}\PinnObsLoss$,
-train RMSE \PinnTrainRmse) with small seed spread, yet its parameters are off: $h$ by \PinnErrH\%
-(\PinnGapHMin--\PinnGapHMax\ FV standard deviations from the FV estimate) and $a_0$ by \PinnErrA\%
-(\PinnGapAMin--\PinnGapAMax\ FV sd); only $\beta$ agrees with FV (within \PinnGapBMax\ FV sd; truth
-errors \PinnErrB\% PINN, \FvErrB\% FV). Seed spread is \emph{not} uncertainty. Agreement of the PINN field with an FV field at the PINN's own parameters
-(RMSE \PinnCons) shows consistency only. The accuracy question is answered by an exact-physics
-likelihood-ratio check (\S5): all seeds lie outside the FV fit's joint 99.9\% region
-($\Delta\chi^2$ \PinnDchiMin--\PinnDchiMax\ vs \PinnDchiLim) and are reported \texttt{weak\_evidence}.
-\textbf{Conclusion:} the PINN does not outperform the numerical baseline here; the FV fit is primary.
+\textbf{Result.} The PINN fits the readings (train RMSE \PinnTrainRmse) but its parameters are off: $h$ by
+\PinnErrH\%, $a_0$ by \PinnErrA\%; only $\beta$ agrees with FV. Its seed spread is not uncertainty, and
+agreement with an FV field at its own parameters (RMSE \PinnCons) is consistency, not accuracy. An
+exact-physics likelihood-ratio check places every seed outside the FV fit's 99.9\% region
+($\Delta\chi^2$ \PinnDchiMin--\PinnDchiMax\ vs \PinnDchiLim), so all are reported \texttt{weak\_evidence}.
+The PINN does not beat the numerical baseline here; FV is primary.
 
-\begin{figure}[t]\centering
-\includegraphics[width=0.27\linewidth]{refinement}\hfill
-\includegraphics[width=0.70\linewidth]{pinn_traces}
-\caption{(a) MMS refinement, slope 2. (b) PINN parameter trajectories, public bundle\syn, 3 seeds:
-$\beta$ settles near the FV value (dotted); $a_0$ ends \PinnErrA\% low and $h$ far below truth (dashed).}\label{fig:ver}
+\begin{figure}[h]\centering
+\includegraphics[width=0.40\linewidth]{refinement}\hfill
+\includegraphics[width=0.56\linewidth]{coverage}
+\caption{(a) Manufactured-solution refinement: slope 2. (b) Interval coverage over 20 datasets\syn:
+independent noise; AR(1) noise without and with the autocorrelation guard.}\label{fig:ver}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=\linewidth]{pinn_traces}
+\caption{PINN parameters during training, public bundle\syn, 3 seeds (physics frozen for the first 1500
+steps). $\beta$ settles near FV (dotted); $a_0$ ends \PinnErrA\% low and $h$ far below truth (dashed).}\label{fig:pinn}
 \end{figure}
 
 \section{Stage 3 --- investigation}
-\textbf{Uncertainty (Fig.~\ref{fig:s3}b).} 95\% Laplace intervals for $a_0,\beta,h$ on \CovIndN\
-independent synthetic datasets: coverage \CovIndA/\CovIndN, \CovIndB/\CovIndN, \CovIndH/\CovIndN\
-(Wilson lower bound \CovIndWilsonLo; $n$ is small --- a sanity check, not calibration). Data
-uncertainty isolated by redrawing only the noise 20 times: empirical sd / Laplace sd $=$
-\RedrawRatioA\ ($a_0$), \RedrawRatioB\ ($\beta$), \RedrawRatioH\ ($h$), about \RedrawSeMin--\RedrawSeMax\ times the $\pm16\%$
-sampling error of an sd from 20 draws (hinting mild optimism), whereas across datasets the standardised
-errors have sd \CovZsdMin--\CovZsdMax\ (hinting mild conservatism); at $n{=}20$ neither is conclusive
-and coverage is nominal. Seed variability is a separate quantity: zero for the deterministic FV fit (multistarts agree),
-the PINN spread in Table~\ref{tab:main} for the PINN. Dependence assumption tested with AR(1) noise
-($\rho{=}0.6$): plain Laplace intervals cover \CovArRawA, \CovArRawB, \CovArRawH\ of \CovArN; the
-autocorrelation guard flags \CovArFlagged/\CovArN\ such datasets and widens intervals by
-$(1{+}\hat\rho)/(1{-}\hat\rho)$, giving \CovArA, \CovArB, \CovArH\ of \CovArN; it flags
-\CovIndFlagged/\CovIndN\ independent-noise datasets.
+\textbf{Uncertainty (Fig.~\ref{fig:ver}b).} Coverage of 95\% intervals on \CovIndN\ independent synthetic
+datasets: \CovIndA, \CovIndB, \CovIndH\ of \CovIndN\ for $a_0,\beta,h$ (Wilson lower bound
+\CovIndWilsonLo; small $n$, a sanity check). Data uncertainty alone (20 noise redraws): empirical/Laplace sd
+\RedrawRatioA, \RedrawRatioB, \RedrawRatioH\ --- mildly optimistic, not conclusive at $n{=}20$. Seed
+variability is separate: zero for FV (multistarts agree), the Table~\ref{tab:main} spread for the PINN.
+With AR(1) noise ($\rho{=}0.6$) plain intervals cover \CovArRawA, \CovArRawB, \CovArRawH\ of \CovArN; the
+guard flags all \CovArFlagged\ and widens by $(1{+}\hat\rho)/(1{-}\hat\rho)$, restoring \CovArA, \CovArB,
+\CovArH; it flags \CovIndFlagged\ independent-noise datasets.
 
-\textbf{Controlled experiments (Fig.~\ref{fig:s3}a; one change each, fixed evaluation = latent RMSE on held-out E4).}
-Truth $(\AbTrueA,\AbTrueB,\AbTrueH)$. \emph{Coverage:} removing sensors at $x\ge0.7$ widens the $h$
-interval $\AbHWidthRatioRight\times$; early times only ($t\le0.3$) widen it $\AbHWidthRatioEarly\times$ and
-$\beta$'s too; 4$\times$ sparser sampling widens all intervals but estimates stay within them; dropping left
-sensors mainly widens $\beta$ ($\AbBWidthRatioLeft\times$). \emph{Assumptions:} constant $a$ gives $\AbLatRatioConst\times$ the held-out latent error;
-offsets forced to zero push $\beta$ to \AbZeroOffB. Hypotheses were stated before running (code, \texttt{ABLATION\_HYPOTHESES}).
+\textbf{Controlled experiments (Fig.~\ref{fig:abl}).} One change each, hypotheses stated in code beforehand,
+fixed evaluation (held-out latent RMSE). Removing sensors at $x\ge0.7$ or keeping only $t\le0.3$ widens
+the $h$ interval $\AbHWidthRatioRight\times$; early times also widen $\beta$; dropping left sensors mainly
+widens $\beta$. Assuming constant $a$ gives $\AbLatRatioConst\times$ the held-out latent error; forcing
+offsets to zero pushes $\beta$ to its bound (\AbZeroOffB).
 
-\textbf{Experimental design.} One new sensor at $x{=}0.95$ (24 readings/experiment, unknown offset) vs
-the same 24 readings spread over existing sensors. Rule, fixed before truth: choose the design with
-the smaller linearised posterior sd of $h$ at a \emph{pilot} fit (Fisher information incl.\ the new
-offset). The ambiguity addressed is the $h$--conduction--offset trade-off at the Robin end. The rule
-chose the new sensor in \DesRuleA/\DesN\ datasets; it narrowed the $h$ interval in \DesAWins/\DesN\
-(mean width \DesAHW\ vs \DesBHW; base \DesBaseHW) but mean $|h|$ error did not measurably differ at
-$n{=}\DesN$ (\DesAErr\ vs \DesBErr) --- a precision gain, not a demonstrated accuracy gain.
+\textbf{Experimental design.} A new sensor at $x{=}0.95$ vs the same 24 readings per experiment on existing
+sensors. Rule, fixed before truth: pick the design with the smaller predicted sd of $h$ at a pilot fit.
+It chose the new sensor in \DesRuleA/\DesN\ datasets and narrowed the $h$ interval in \DesAWins/\DesN\ (width
+\DesAHW\ vs \DesBHW), but $|h|$ error did not measurably differ (\DesAErr\ vs \DesBErr): a precision gain,
+not a demonstrated accuracy gain.
 
-\begin{figure}[t]\centering
-\includegraphics[width=0.62\linewidth]{ablation}\hfill
-\includegraphics[width=0.36\linewidth]{coverage}
-\caption{(a) Ablation: estimates $\pm$95\% (dashed: truth). (b) Interval coverage: independent noise; AR(1) noise without and with the guard.}\label{fig:s3}
+\textbf{The three questions.} \emph{Can bias mask wrong physics?} Yes: with $\beta{=}0.45$ the constant-$a$
+model fits at $\chi^2_\nu{=}\AbConstAChi$ (limit \AbConstALim, accepted) with $\AbLatRatioConst\times$ the
+latent error; only model comparison or held-out prediction exposes it. \emph{Which parameters become weak?}
+$h$ first (right-end or late data removed), then $\beta$ (early times); $a_0$ stays determined.
+\emph{Which measurement helps?} A sensor near the Robin end: it sees the boundary gradient directly and
+breaks the $h$/conduction/offset trade-off.
+
+\begin{figure}[h]\centering
+\includegraphics[width=\linewidth]{ablation}
+\caption{Controlled experiments\syn: estimate $\pm$95\% interval under each change (dashed: truth).}\label{fig:abl}
 \end{figure}
-
-\textbf{The three questions.}
-\emph{Can sensor bias mask incorrect physics despite low temperature error?} Yes, more so as the true
-gradient weakens. With $\beta{=}0.45$ (ablation\syn) the constant-$a$ model with free offsets fits the
-training readings at $\chi^2_\nu{=}\AbConstAChi$ (limit \AbConstALim: \emph{accepted}) while its held-out
-latent error is $\AbLatRatioConst\times$ larger. With $\beta{=}0.6$ (5 datasets\syn) offsets still absorb most
-of the misfit (train RMSE \BiasWrongTrain\ vs \BiasOkTrain) but $\chi^2_\nu{=}\BiasWrongChi$ exposes it.
-Detection needs model comparison or held-out prediction, not training fit alone.
-\emph{Which parameters become weakly identifiable?} $h$ first (right-end coverage or late times),
-then $\beta$ (early times); $a_0$ stays well determined.
-\emph{Which additional measurement helps, and why?} A sensor near the Robin end: it observes the
-boundary gradient directly, breaking the $h$/conduction/offset trade-off --- but it brings its own
-unknown offset, which the selection rule accounts for.
 
 \section{Stage 4 --- reliability, diagnosis, recovery}
-\textbf{Automatic status.} Every result carries \texttt{ok}/\texttt{weak\_evidence}/\texttt{failed}
-from rules fixed in code, none using truth: $\chi^2_\nu$ above $1{+}3\sqrt{2/\nu}$; positive residual
-autocorrelation ($z{>}3$); held-out predictive $\chi^2$; nested LRT constant-vs-variable $a$
-($p{=}10^{-3}$); interval $>$50\% of the admissible range $\Rightarrow$ estimate \emph{withheld};
-estimate on a bound; multistart disagreement; PINN exact-physics recheck; fault-hypothesis scan.
-Most were added in response to a measured miss; false-alarm rates were measured on correct models.
+\textbf{Automatic status.} Every result is \texttt{ok}, \texttt{weak\_evidence} or \texttt{failed} from rules
+in code that never use truth: $\chi^2_\nu>1{+}3\sqrt{2/\nu}$; positive residual autocorrelation ($z{>}3$);
+held-out predictive $\chi^2$; nested test constant vs variable $a$ ($p{=}10^{-3}$); interval wider than
+50\% of the range $\Rightarrow$ estimate withheld; estimate on a bound; multistart disagreement; PINN
+exact-physics check; fault scan. False-alarm rates were measured on correct models.
 
-\textbf{Model diagnosis.} Rules frozen in \texttt{configs/diagnosis\_rules.yaml}. Observations
-(residual trends, $\chi^2$, early/late parameter shift) are reported separately from causal
-hypotheses, each a nested one-parameter model: drift of sensor $s$ ($y{+}rt$, every sensor),
-Gaussian heat source (centre scanned), constant bias of the recorded $g$. Evidence $=\Delta\chi^2$
-(LRT), with the extra parameter's estimate $\pm$ sd as sensitivity. Threshold v2 $=15.1$ (Bonferroni
-over 10 hypotheses, family $p{=}10^{-3}$; it replaced an ad-hoc 25, which would have missed
-\SweepVOneMiss\ of the sweep's detections); over \NullN\ fault-free bundles the largest $\Delta\chi^2$ is
-\NullMax\ (\NullFalse\ false alarms). Validation\syn: \DiagValOk/\DiagValN\ correct. Fault-size
-sweep\syn: \SweepDetected/\SweepN\ detected, \SweepAmbig\ ambiguous, \SweepNamedWrong\ of \SweepNamed\
-named verdicts wrong. Missed faults reach drift rate \SweepMissDrift/unit time, source $Q{=}$\SweepMissQ\ and
-boundary bias \SweepMissBias; undetected, they still bias $\beta$ by up to \SweepMissBetaErr.
-\textbf{Blind test:} rules committed $\rightarrow$ sealed bundle (fault drawn from OS randomness)
-committed together with its truth file, whose hash is in the manifest $\rightarrow$ verdict committed
-$\rightarrow$ unsealed. The git order proves that rules and truth were fixed before the verdict, not that
-the truth went unread; for that, the diagnosis was re-run with every truth-file read blocked and
-reproduced the verdict exactly (\texttt{docs/evidence/blocked\_truth\_diagnosis.*}). Verdict: \emph{\SealVerdict}
-($\Delta\chi^2{=}\SealDchi$, $Q{=}\SealQ\pm\SealQsd$ at the nearest scanned centre); truth: heat source,
-$Q{=}\SealTrueQ$ at $x{=}\SealTrueXc$ (width differs; integrated heat agrees within \SealHeatRatio\%). The base fit
-there reported \texttt{ok} with $h{=}\SealBaseH$ (true \SealTrueH; \SealFixedH\ once the source is
-modelled) --- which is why the fault scan now runs inside \texttt{evaluate} (public bundle: \ScanVerdict).
+\textbf{Diagnosis.} Rules frozen in \texttt{configs/diagnosis\_rules.yaml}. Observations (residual trends,
+$\chi^2$, early/late parameter shift) are reported separately from causal hypotheses, each a one-parameter
+extension: drift of each sensor, a Gaussian heat source (centre scanned), a bias in the recorded $g$.
+Evidence is the $\chi^2$ drop; the extra parameter $\pm$ sd is the sensitivity. Threshold 15.1 (Bonferroni,
+10 hypotheses, family $p{=}10^{-3}$); on \NullN\ fault-free bundles the largest drop is \NullMax\
+(\NullFalse\ false alarms); \DiagValOk/\DiagValN\ known faults correct; fault-size sweep \SweepDetected/\SweepN\
+detected, \SweepNamedWrong\ named wrongly. Undetected small faults still bias $\beta$ by up to
+\SweepMissBetaErr. \textbf{Blind test:} rules committed, then a sealed bundle with a randomly drawn fault and
+its truth (hash in the manifest), then the verdict, then unsealing; re-running with truth reads blocked
+gives the same verdict. Verdict \emph{\SealVerdict} ($\Delta\chi^2{=}\SealDchi$, $Q{=}\SealQ\pm\SealQsd$);
+truth: heat source, $Q{=}\SealTrueQ$ at $x{=}\SealTrueXc$ (integrated heat within \SealHeatRatio\%). The base fit
+there said \texttt{ok} with $h{=}\SealBaseH$ (true \SealTrueH), so the fault scan now runs inside
+\texttt{evaluate} (public bundle: \ScanVerdict).
 
-\begin{figure}[t]\centering
-\includegraphics[width=0.48\linewidth]{diagnosis}\hfill
-\includegraphics[width=0.50\linewidth]{val_predictions}
-\caption{(a) Sealed blind test: $\Delta\chi^2$ per hypothesis vs frozen threshold. (b) Held-out E4\syn:
-readings vs FV variable (blue) and constant (red) predictions with 95\% reading intervals.}\label{fig:s4}
+\begin{figure}[!ht]\centering
+\includegraphics[width=0.95\linewidth]{diagnosis}
+\caption{Sealed blind test: $\chi^2$ drop per fault hypothesis vs the frozen threshold 15.1; only the heat
+source clears it with margin.}\label{fig:s4}
 \end{figure}
 
-\textbf{Recovery and visibility.} Checkpoints carry a fingerprint (config + data hash); writes are
-atomic. A run killed mid-training and resumed reproduces the uninterrupted parameters exactly
-(max difference \RestartDiff); a checkpoint from another config is refused; a truncated newest file is
-skipped; an injected non-finite loss is logged, rolled back and the lr halved (\RestartAll). Every
-result JSON logs data sha256, config + hash, seed, git commit/dirty flag, hardware, threads, versions,
-wall time.
+\textbf{Recovery and visibility.} Checkpoints carry a fingerprint (config + data hash). A run killed
+mid-training and resumed matches the uninterrupted run exactly (difference \RestartDiff); a checkpoint
+from another config is refused; a truncated file is skipped; an injected non-finite loss is logged,
+rolled back and the learning rate halved. Every result logs data hash, config, seed, git commit, hardware,
+versions and wall time.
 
-\textbf{One misleading result, investigated.} In the first public evaluation a PINN seed passed the
-recheck with $h{=}\VOneSeedTwoH$ (true \TrueH): $\chi^2_\nu{=}\VOneSeedTwoChi$ against a limit of
-\VOneSeedTwoLim. Investigation: an absolute $\chi^2_\nu$ test has little power because a wrong $h$ moves
-$\chi^2_\nu$ by only \VOneChiGap\ above the optimum. Fix: test the PINN parameters against the FV optimum on the same data
-(LRT, $\chi^2_k$); it rejects this case by a wide margin and is pinned by a regression test.
-Testing also found six bugs (IDs restarting per experiment were all dropped as conflicts; a
-NaN input passed silently; unknown flags were trusted; per-experiment query IDs were rejected; a garbage numeric
-cell crashed the loader; the smoke run failed on a fresh clone), all fixed.
+\textbf{A misleading result.} In the first evaluation a PINN seed passed the old check with
+$h{=}\VOneSeedTwoH$ (true \TrueH): $\chi^2_\nu{=}\VOneSeedTwoChi$ vs limit \VOneSeedTwoLim. A wrong $h$ moves
+$\chi^2_\nu$ by only \VOneChiGap, so an absolute test has little power; the replacement compares against
+the FV optimum on the same data and rejects it clearly. Testing also found six input-handling bugs, all fixed.
 
-\textbf{Compute.} Laptop i7-1165G7 (4 cores), 16\,GB, no GPU, 4 torch threads. FV fit \FvFitSec\,s;
-PINN \PinnTrainSec\,s/seed + \PinnAdaptSec\,s physics-only adaptation; full public evaluation \EvalWall\,min;
-CPU smoke run of every stage \SmokeSec\,s (\SmokeOk; budget 10\,min) on a free 2-vCPU Linux cloud runner (GitHub Actions, clean install from the lock file; \NTests\ tests also pass there); on the laptop it is load-dependent (measured: 205\,s idle for the earlier, larger version; 469\,s for the current one with other applications running).
+\textbf{Compute.} Laptop i7-1165G7, 16\,GB, no GPU: FV fit \FvFitSec\,s; PINN \PinnTrainSec\,s/seed +
+\PinnAdaptSec\,s adaptation; public evaluation \EvalWall\,min; CPU smoke run \SmokeSec\,s (\SmokeOk, budget
+10\,min) on a 2-vCPU cloud runner; \NTests\ tests pass.
 
 \section{Claims, limitations, time}
-\textbf{Supported\syn:} FV recovery with calibrated intervals under the stated noise model; $h$ is the
-weakly identified parameter and a Robin-end sensor improves its precision; guards detect
-dependent noise, wrong diffusivity form, PINN parameter inconsistency and three fault types above
-measured sizes. \textbf{Not supported / unresolved:} anything on real data; faults below the
-detection limits bias $\beta$ silently; Laplace intervals are local; the PINN's $h$; design accuracy
-gain (only precision shown); coverage from 20 datasets. \textbf{Distinctions kept:} training fit
-(Table~\ref{tab:main} row 5) vs held-out prediction (rows 6--7) vs parameter recovery (synthetic only)
-vs physical consistency (energy balance, PINN--FV agreement).
-\textbf{Time spent:} planning, build, experiments and report $\approx$4\,h (24 Oct 21:56 -- 25 Oct 02:07 IST,
-AI-assisted; session log and git history); on 25 Oct from 10:00 IST, a cloud smoke run, a fact-check of every
-reported number and fixes (AI-assisted); author review and walkthrough preparation (author, to be added).
+\textbf{Supported\syn:} FV recovery with calibrated intervals; $h$ is the weakly identified parameter and a
+Robin-end sensor improves its precision; guards detect dependent noise, wrong diffusivity form, PINN
+parameter inconsistency and three fault types above measured sizes.
+\textbf{Not supported:} anything on real data; faults below detection bias $\beta$; Laplace intervals are
+local; the PINN's $h$; design accuracy gain; coverage from only 20 datasets.
+\textbf{Time spent:} $\approx$4\,h build, experiments and report (24 Oct 21:56 -- 25 Oct 02:07 IST);
+25 Oct: cloud smoke run, fact-check of every number and fixes; author review and walkthrough preparation.
 
-\newpage
-\section*{Appendix --- AI assistance and verification (1 page)}
-\textbf{How AI was used.} Claude (Anthropic) was used as a pair-programmer throughout, as the brief
-permits: drafting code, running experiments, and drafting this report. I directed the plan,
-decisions and trade-offs; the AI proposed and implemented them; decisions such as dropping PINN tuning,
-adding guards and tightening thresholds were discussed and approved explicitly.
+\clearpage
+\section*{Appendix --- AI assistance and verification}
+\textbf{How AI was used.} Claude was used as a pair-programmer throughout: drafting code, running
+experiments and drafting this report. I directed the plan, decisions and trade-offs; decisions such as
+stopping PINN tuning, adding guards and tightening thresholds were discussed and approved explicitly.
 
 \textbf{How the output was verified --- by evidence, not trust.}
 \begin{itemize}
-\item \emph{Independent references:} the solver is checked against a manufactured solution (hand-derived
-source), a closed-form steady state, discrete energy conservation and the maximum principle; the PINN
-operator is checked against the same hand-derived source.
-\item \emph{Known truth:} recovery, coverage, ablation, design and diagnosis studies use synthetic data with
-truth stored separately and read only for scoring; a monkeypatched file guard proves fit/predict never
-open it; corrupting validation labels leaves training estimates bit-identical.
-\item \emph{Pre-registration:} diagnosis rules were committed before the sealed blind test and methods
-before the final evaluation; the git history shows the order. Rule changes (one-sided autocorrelation
-test, Bonferroni threshold, and the stronger PINN recheck made after the first evaluation run) are
-declared with the evidence that motivated them.
-\item \emph{Adversarial testing:} \NTests\ automated tests (black-box: metamorphic shift/scale invariance,
-renamed IDs/layouts, row order, edge-of-box truths, malformed inputs, CLI; white-box: autograd operator,
-Jacobian, decision branches, interval algebra). They found six real bugs (one by fuzzing the loader), one wrong test premise and, on a fresh clone,
-a dependency-pin gap (installation now uses the full lock file).
+\item \emph{Independent references:} the solver against a manufactured solution, a closed-form steady
+state, energy conservation and the maximum principle; the PINN operator against the same hand-derived source.
+\item \emph{Known truth:} all studies use synthetic data with truth stored separately and read only for
+scoring; a file guard proves fit/predict never open it; corrupting validation labels leaves training
+estimates bit-identical.
+\item \emph{Pre-registration:} diagnosis rules committed before the sealed blind test, methods before the
+final evaluation; rule changes (one-sided autocorrelation test, Bonferroni threshold, stronger PINN check
+after the first evaluation run) are declared with their evidence.
+\item \emph{Adversarial testing:} \NTests\ tests (metamorphic shift/scale invariance, renamed IDs and layouts,
+row order, edge-of-box truths, malformed inputs, CLI; autograd operator, Jacobian, decision branches). They
+found six real bugs, one wrong test premise and a dependency-pin gap on a fresh clone.
 \item \emph{AI errors caught:} an ad-hoc threshold, a guard with too little power, a premature claim that a
-status rule was protective (it let a $\AbLatRatioConst\times$ error through), a mis-stated clock time. Each was challenged,
-re-measured and corrected; the over-engineering review removed dead code and test hooks from production paths.
-\item \emph{No hand-typed results:} every result number in this report is generated by
-\texttt{report/make\_numbers.py} from the result files.
+status rule was protective, a mis-stated clock time, and a figure drawing the superseded diagnosis
+threshold. Each was challenged, re-measured and corrected.
+\item \emph{No hand-typed results:} every number here is generated by \texttt{report/make\_numbers.py}
+from the result files.
 \end{itemize}
 \end{document}

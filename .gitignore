@@ -9,7 +9,3 @@ Shodh_AI_ML_Intern_Assessment.pdf
 report/*.aux
 report/*.log
 report/*.out
-# personal prep notes (kept locally, not published)
-docs/WALKTHROUGH.md
-docs/CHECKLIST.md
-docs/live_snippets.py
