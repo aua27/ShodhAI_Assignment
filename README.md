@@ -25,7 +25,7 @@ pip install -e . --no-deps
 
 python -m heatinv smoke                                   # every stage, reduced size (97-169 s on 2-vCPU cloud runners; budget 10 min)
 python -m heatinv evaluate --config configs/public.yaml   # THE public evaluation command
-pytest -q                                                 # 58 focused checks (~3 min)
+pytest -q                                                 # 58 focused checks (3-9 min on the laptop, load-dependent)
 ```
 
 | Command | What it does | Output |
@@ -46,7 +46,7 @@ Measured (see the provenance blocks in `results/`): FV fit ~6 s;
 one PINN seed (5000 Adam + 300 L-BFGS) ~4 min + ~1 min physics-only adaptation per seed;
 full `evaluate` incl. 3 PINN seeds ~16 min; smoke 169 s on a clean 2-vCPU GitHub Actions runner (AMD EPYC 7763; an earlier run on an EPYC 9V45 runner took 97 s)
 (`results/smoke_cloud_github_actions.json`; re-run via the `cpu-smoke` workflow) and load-dependent on the
-laptop (measured 205 s idle for an earlier, larger version; 469 s for the current one with other apps running); all studies ~27 min; `pytest` ~3 min.
+laptop (measured 205 s idle for an earlier, larger version; 469 s for the current one with other apps running); all studies ~27 min; `pytest` 3.3 min idle, 8.5 min with other apps running.
 Memory (measured peaks, resident / committed): FV fit ~0.12 / 0.6 GB; full-size PINN run ~0.4 / 0.9 GB. GPU not needed.
 
 **Reproduce everything** (about 50 min; bash syntax, from the repo root):
