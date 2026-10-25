@@ -63,9 +63,6 @@ and the last step as `cd report; pdflatex report.tex; cd ..` (`&&` needs PowerSh
 `report/make_numbers.py` writes every number in the report from these result files (no hand-typed numbers).
 Results land in `outputs/` (not committed); the copies cited by the report are committed under `results/`.
 
-**Agreed machine.** The brief's "agreed machine" was not specified; the reference laptop above is
-assumed. The smoke run reports its own wall time and hardware.
-
 **Focused checks required by the brief** (all in `pytest`):
 
 | Check | Tests |
