@@ -276,7 +276,7 @@
   ],
   "provenance": {
     "kind": "study:design",
-    "timestamp_utc": "2026-10-24T19:52:46+00:00",
+    "timestamp_utc": "2026-10-25T08:15:22+00:00",
     "data_sha256": null,
     "config_hash": "1aadf80e7e4be263",
     "config": {
@@ -284,7 +284,7 @@
     },
     "seed": null,
     "git": {
-      "commit": "1b9cd3c",
+      "commit": "06e9037",
       "dirty": false
     },
     "hardware": {
@@ -299,6 +299,6 @@
       "numpy": "2.4.3",
       "scipy": "1.17.1"
     },
-    "wall_time_s": 114.956
+    "wall_time_s": 157.931
   }
 }

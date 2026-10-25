@@ -184,7 +184,7 @@
   "eval": "fixed: E4 held-out, latent + noisy RMSE",
   "provenance": {
     "kind": "study:ablation",
-    "timestamp_utc": "2026-10-24T19:46:55+00:00",
+    "timestamp_utc": "2026-10-25T08:07:49+00:00",
     "data_sha256": "6d187e6fe95d7933b589b39c20e4ff38f17f4ac192f97ee8dcdee8ed9c9eb811",
     "config_hash": "6876aa727ef7ee65",
     "config": {
@@ -192,7 +192,7 @@
     },
     "seed": null,
     "git": {
-      "commit": "1b9cd3c",
+      "commit": "06e9037",
       "dirty": false
     },
     "hardware": {
@@ -207,6 +207,6 @@
       "numpy": "2.4.3",
       "scipy": "1.17.1"
     },
-    "wall_time_s": 38.893
+    "wall_time_s": 49.773
   }
 }

@@ -50,7 +50,7 @@ one PINN seed (5000 Adam + 300 L-BFGS) ~4 min + ~1 min physics-only adaptation p
 full `evaluate` incl. 3 PINN seeds ~16 min; smoke 97 s on a clean 2-vCPU GitHub Actions runner
 (`results/smoke_cloud_github_actions.json`; re-run via the `cpu-smoke` workflow) and load-dependent on the
 laptop (measured 205 s idle for an earlier, larger version; 469 s for the current one with other apps running); all studies ~27 min; `pytest` ~3 min.
-Memory < 1 GB. GPU not needed.
+Memory (measured peaks, resident / committed): FV fit ~0.12 / 0.6 GB; full-size PINN run ~0.4 / 0.9 GB. GPU not needed.
 
 **Reproduce everything** (about 50 min):
 ```bash
@@ -117,8 +117,9 @@ fitting routine; validation labels are used only for scoring; the test experimen
 * `results.json` — everything: per-method fits, train/val MAE/RMSE (pooled over readings, weight 1
   each, and per experiment), interval coverage, energy-balance and consistency diagnostics, PINN
   per-seed runs incl. failures, cleaning summary, synthetic truth scoring (labelled synthetic).
-* Every JSON has `provenance`: data sha256, config + hash, seed, git commit/dirty flag, hardware,
-  threads, library versions, wall time.
+* Every result JSON has `provenance`: data sha256, config + hash, seed, git commit/dirty flag, hardware,
+  threads, library versions, wall time (`results/public_eval_v1_pinn_runs.json` is an excerpt of
+  `public_eval_v1_results.json` and carries none of its own).
 
 ## Repository layout
 
@@ -130,7 +131,7 @@ data/          public_v1/ (synthetic bundle)  truth/ (synthetic truth, scoring o
                sealed_v1/ + sealed_v1_truth.json (Stage-4 blind test; truth hash in manifest)
 results/       final public evaluation outputs; sealed-diagnosis verdict; archived v1/v2 runs
 tests/         58 tests: solver, data validation, inverse, restart, black-box, white-box
-docs/          evidence/ (PINN development log, failed runs)
+docs/          evidence/ (PINN development log, failed runs, blocked-truth re-run of the sealed diagnosis)
 report/        report.pdf (5 pages incl. 1-page AI appendix), report.tex, make_numbers.py, figures/
 ```
 

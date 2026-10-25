@@ -12,14 +12,14 @@
         }
       ],
       "params_A": {
-        "a0": 0.0647512823343277,
-        "beta": -0.22835981845855713,
-        "h": 0.2702353000640869
+        "a0": 0.06963641941547394,
+        "beta": -0.1029810905456543,
+        "h": 0.28776487708091736
       },
       "params_B": {
-        "a0": 0.0647512823343277,
-        "beta": -0.22835981845855713,
-        "h": 0.2702353000640869
+        "a0": 0.06963641941547394,
+        "beta": -0.1029810905456543,
+        "h": 0.28776487708091736
       }
     },
     "incompatible_checkpoint_refused": {
@@ -62,9 +62,9 @@
   },
   "provenance": {
     "kind": "restart_check",
-    "timestamp_utc": "2026-10-24T17:38:06+00:00",
+    "timestamp_utc": "2026-10-25T08:06:58+00:00",
     "data_sha256": "a6e64ab1040db917277f8b07a07ed723472afd6d744d248c20fa9ed0dd2373db",
-    "config_hash": "9f981764abed7257",
+    "config_hash": "0f0f864a4dcd6d4d",
     "config": {
       "width": 24,
       "depth": 3,
@@ -74,6 +74,7 @@
       "adam_steps": 300,
       "lr": 0.002,
       "lr_phys": 0.005,
+      "lr_final_frac": 0.1,
       "freeze_phys_steps": 100,
       "lbfgs_iters": 20,
       "resample_every": 100,
@@ -87,13 +88,13 @@
       "adapt_steps": 2000,
       "adapt_lbfgs": 150,
       "ckpt_every": 100,
-      "threads": 2,
+      "threads": 4,
       "fail_obs_loss": 4.0
     },
     "seed": 0,
     "git": {
-      "commit": "9494b14",
-      "dirty": true
+      "commit": "06e9037",
+      "dirty": false
     },
     "hardware": {
       "platform": "Windows-10-10.0.26200-SP0",
@@ -102,11 +103,11 @@
       "cpu_count_logical": 8,
       "cpu": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
       "torch": "2.12.0+cpu",
-      "torch_threads": 2,
+      "torch_threads": 4,
       "cuda": false,
       "numpy": "2.4.3",
       "scipy": "1.17.1"
     },
-    "wall_time_s": 39.211
+    "wall_time_s": 26.84
   }
 }

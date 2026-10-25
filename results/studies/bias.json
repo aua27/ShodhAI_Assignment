@@ -36,7 +36,7 @@
   ],
   "provenance": {
     "kind": "study:bias",
-    "timestamp_utc": "2026-10-24T19:47:53+00:00",
+    "timestamp_utc": "2026-10-25T08:08:55+00:00",
     "data_sha256": null,
     "config_hash": "903c540936fe762e",
     "config": {
@@ -44,7 +44,7 @@
     },
     "seed": null,
     "git": {
-      "commit": "1b9cd3c",
+      "commit": "06e9037",
       "dirty": false
     },
     "hardware": {
@@ -59,6 +59,6 @@
       "numpy": "2.4.3",
       "scipy": "1.17.1"
     },
-    "wall_time_s": 56.007
+    "wall_time_s": 64.263
   }
 }

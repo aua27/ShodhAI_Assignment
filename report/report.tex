@@ -29,8 +29,8 @@ takes any bundle in the documented format (README), so a real bundle needs a one
 \textbf{Model.} $u_t=\partial_x[a(x)u_x]$, $a=a_0e^{\beta(2x-1)}$, $u(0,t)=g(t)$,
 $-a(1)u_x(1,t)=h[u(1,t)-T_a(t)]$, readings $y=u(x_s,t)+b_s+\varepsilon$, $b_{\rm ref}=0$. Physically:
 Fourier conduction with a graded conductivity ($a_0$ = mid-rod value, $e^{2\beta}$ = right/left
-ratio), a clamped heater at $x{=}0$ and Newton cooling at $x{=}1$. With $a\approx0.07$ heat travels
-$\sqrt{at}\approx0.26$ in the experiment, so the Robin end is seen mainly by the right-most sensors:
+ratio), a clamped heater at $x{=}0$ and Newton cooling at $x{=}1$. With $a\approx0.07$--$0.15$ (public bundle\syn) heat
+diffuses only $\sqrt{at}\approx0.3$--$0.4$ in the experiment, so the Robin end is seen mainly by the right-most sensors:
 the a-priori reason $h$ is the hardest parameter. Heat leaving at $x{=}1$ crosses conduction and film
 resistances in series, so $a_0$, $h$ and offsets can trade off.
 
@@ -198,8 +198,11 @@ over 10 hypotheses, family $p{=}10^{-3}$; it replaced an ad-hoc 25, which would 
 sweep\syn: \SweepDetected/\SweepN\ detected, \SweepAmbig\ ambiguous, \SweepNamedWrong\ of \SweepNamed\
 named verdicts wrong. Missed faults reach drift rate \SweepMissDrift/unit time, source $Q{=}$\SweepMissQ\ and
 boundary bias \SweepMissBias; undetected, they still bias $\beta$ by up to \SweepMissBetaErr.
-\textbf{Blind test:} rules committed $\rightarrow$ sealed bundle (fault drawn from OS randomness, truth
-hashed) committed $\rightarrow$ verdict committed $\rightarrow$ unsealed. Verdict: \emph{\SealVerdict}
+\textbf{Blind test:} rules committed $\rightarrow$ sealed bundle (fault drawn from OS randomness)
+committed together with its truth file, whose hash is in the manifest $\rightarrow$ verdict committed
+$\rightarrow$ unsealed. The git order proves that rules and truth were fixed before the verdict, not that
+the truth went unread; for that, the diagnosis was re-run with every truth-file read blocked and
+reproduced the verdict exactly (\texttt{docs/evidence/blocked\_truth\_diagnosis.*}). Verdict: \emph{\SealVerdict}
 ($\Delta\chi^2{=}\SealDchi$, $Q{=}\SealQ\pm\SealQsd$ at the nearest scanned centre); truth: heat source,
 $Q{=}\SealTrueQ$ at $x{=}\SealTrueXc$ (width differs; integrated heat agrees within \SealHeatRatio\%). The base fit
 there reported \texttt{ok} with $h{=}\SealBaseH$ (true \SealTrueH; \SealFixedH\ once the source is
@@ -241,8 +244,9 @@ detection limits bias $\beta$ silently; Laplace intervals are local; the PINN's 
 gain (only precision shown); coverage from 20 datasets. \textbf{Distinctions kept:} training fit
 (Table~\ref{tab:main} row 5) vs held-out prediction (rows 6--7) vs parameter recovery (synthetic only)
 vs physical consistency (energy balance, PINN--FV agreement).
-\textbf{Time spent:} planning, build, experiments and report $\approx$4.5\,h (24 Oct 21:50 -- 25 Oct 02:15 IST,
-AI-assisted, git history); review and walkthrough preparation on 25 Oct (author, to be added).
+\textbf{Time spent:} planning, build, experiments and report $\approx$4\,h (24 Oct 21:56 -- 25 Oct 02:07 IST,
+AI-assisted; session log and git history); on 25 Oct from 10:00 IST, a cloud smoke run, a fact-check of every
+reported number and fixes (AI-assisted); author review and walkthrough preparation (author, to be added).
 
 \newpage
 \section*{Appendix --- AI assistance and verification (1 page)}
@@ -259,9 +263,10 @@ operator is checked against the same hand-derived source.
 \item \emph{Known truth:} recovery, coverage, ablation, design and diagnosis studies use synthetic data with
 truth stored separately and read only for scoring; a monkeypatched file guard proves fit/predict never
 open it; corrupting validation labels leaves training estimates bit-identical.
-\item \emph{Pre-registration:} methods and diagnosis rules were committed before the final evaluation and
-the sealed blind test; the git history shows the order. Rule changes (one-sided autocorrelation test,
-Bonferroni threshold) are declared with the evidence that motivated them.
+\item \emph{Pre-registration:} diagnosis rules were committed before the sealed blind test and methods
+before the final evaluation; the git history shows the order. Rule changes (one-sided autocorrelation
+test, Bonferroni threshold, and the stronger PINN recheck made after the first evaluation run) are
+declared with the evidence that motivated them.
 \item \emph{Adversarial testing:} \NTests\ automated tests (black-box: metamorphic shift/scale invariance,
 renamed IDs/layouts, row order, edge-of-box truths, malformed inputs, CLI; white-box: autograd operator,
 Jacobian, decision branches, interval algebra). They found six real bugs (one by fuzzing the loader), one wrong test premise and, on a fresh clone,
@@ -269,7 +274,7 @@ a dependency-pin gap (installation now uses the full lock file).
 \item \emph{AI errors caught:} an ad-hoc threshold, a guard with too little power, a premature claim that a
 status rule was protective (it let a $\AbLatRatioConst\times$ error through), a mis-stated clock time. Each was challenged,
 re-measured and corrected; the over-engineering review removed dead code and test hooks from production paths.
-\item \emph{No hand-typed results:} every result number in this report is generated from result files by
-\texttt{report/make\_numbers.py}.
+\item \emph{No hand-typed results:} every result number in this report is generated by
+\texttt{report/make\_numbers.py} from the result files.
 \end{itemize}
 \end{document}

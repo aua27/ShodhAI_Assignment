@@ -88,7 +88,7 @@
   },
   "provenance": {
     "kind": "study:coverage",
-    "timestamp_utc": "2026-10-24T19:50:49+00:00",
+    "timestamp_utc": "2026-10-25T08:12:42+00:00",
     "data_sha256": null,
     "config_hash": "86c2abbb4444df37",
     "config": {
@@ -97,7 +97,7 @@
     },
     "seed": null,
     "git": {
-      "commit": "1b9cd3c",
+      "commit": "06e9037",
       "dirty": false
     },
     "hardware": {
@@ -112,6 +112,6 @@
       "numpy": "2.4.3",
       "scipy": "1.17.1"
     },
-    "wall_time_s": 174.653
+    "wall_time_s": 226.039
   }
 }

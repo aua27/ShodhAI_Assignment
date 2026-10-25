@@ -1,0 +1,8 @@
+# 2026-10-25 13:46 IST, commit 06e9037 + this script; python docs/evidence/blocked_truth_diagnosis.py outputs/diag_blocked
+guard active: truth file unreadable
+verdict: suspected:heat_source | top: {'kind': 'heat_source', 'where': 'xc=0.75', 'delta_chi2': 38.113, 'estimate': 0.051, 'sd': 0.009}
+chi2_red base: 1.103 | sensors with time trend: []
+verdict new/old: suspected:heat_source / suspected:heat_source
+top new/old: {'kind': 'heat_source', 'where': 'xc=0.75', 'delta_chi2': 38.11333556224463, 'estimate': 0.0511635982857562, 'sd': 0.00860575250765372} / {'kind': 'heat_source', 'where': 'xc=0.75', 'delta_chi2': 38.11333556224463, 'estimate': 0.0511635982857562, 'sd': 0.00860575250765372}
+max |d delta_chi2| across hypotheses: 0.0
+data sha256 same: True
