@@ -1,51 +1,51 @@
 {
   "ok": true,
-  "total_seconds": 97.2,
+  "total_seconds": 168.9,
   "budget_seconds": 600,
   "stages": {
     "verify": {
       "ok": true,
-      "seconds": 0.2,
+      "seconds": 0.4,
       "orders": [
-        1.9932793242066142,
-        1.9978523798600398
+        1.9932793242107172,
+        1.997852379855519
       ]
     },
     "fv_fit_predict": {
       "ok": true,
-      "seconds": 2.1,
+      "seconds": 3.6,
       "status": "ok",
       "params": {
-        "a0": 0.10656902097863785,
-        "beta": -0.40479151020662674,
-        "h": 0.33034440888542327
+        "a0": 0.10656902098010962,
+        "beta": -0.4047915101936443,
+        "h": 0.3303444088907373
       },
-      "val_rmse": 0.012429703107313164
+      "val_rmse": 0.01242970310734122
     },
     "pinn_1seed": {
       "ok": true,
-      "seconds": 18.7,
+      "seconds": 32.5,
       "run_status": "failed",
       "params": {
         "a0": 0.07009212672710419,
         "beta": -0.15506082773208618,
         "h": 0.22909224033355713
       },
-      "train_s": 11.15579170899997
+      "train_s": 21.44546586900003
     },
     "restart": {
       "ok": true,
-      "seconds": 12.1
+      "seconds": 19.4
     },
     "diagnosis": {
       "ok": true,
-      "seconds": 19.0,
+      "seconds": 33.8,
       "verdict": "suspected:boundary_input_error",
       "planted": "boundary_input_error"
     },
     "studies_quick": {
       "ok": true,
-      "seconds": 45.2,
+      "seconds": 79.2,
       "coverage_rate_independent": {
         "a0": 1.0,
         "beta": 1.0,
@@ -55,7 +55,7 @@
   },
   "provenance": {
     "kind": "smoke",
-    "timestamp_utc": "2026-10-25T04:52:43+00:00",
+    "timestamp_utc": "2026-10-25T08:27:24+00:00",
     "data_sha256": null,
     "config_hash": "a9769909da64ae99",
     "config": {
@@ -63,7 +63,7 @@
     },
     "seed": null,
     "git": {
-      "commit": "6f4c03c",
+      "commit": "639357f",
       "dirty": false
     },
     "hardware": {
@@ -71,7 +71,7 @@
       "machine": "x86_64",
       "python": "3.11.17",
       "cpu_count_logical": 2,
-      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
       "torch": "2.12.0+cpu",
       "torch_threads": 2,
       "cuda": false,
