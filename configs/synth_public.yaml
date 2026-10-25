@@ -1,4 +1,4 @@
-# SYNTHETIC public bundle (no real bundle was supplied with the brief).
+# SYNTHETIC public bundle.
 # Truth is drawn at random from the inner 80% of each admissible range by `seed`
 # and written to a separate file that fitting/prediction never read.
 out: data/public_v1

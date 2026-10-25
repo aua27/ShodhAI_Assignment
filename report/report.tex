@@ -33,7 +33,7 @@ Uncertainty: Laplace covariance $(J^\top J)^{-1}$, 95\% Wald intervals (local, c
 Assumptions --- independent Gaussian noise with known sd, correct model form, piecewise-linear inputs --- are
 each tested by a guard (\S5).
 
-\textbf{Data.} All data are synthetic (no data bundle was supplied), generated to the brief's schema with
+\textbf{Data.} All data are synthetic, generated to the brief's schema with
 truth kept in a separate file read only for scoring; results on them are marked\syn. Cleaning is explicit
 and logged per row: \ClnBad\ \texttt{bad}, \ClnConflict\ conflicting repeated-ID (all copies), \ClnDup\
 duplicate, \ClnMissing\ missing and \ClnTime\ out-of-domain rows dropped; \ClnSuspect\ \texttt{suspect}

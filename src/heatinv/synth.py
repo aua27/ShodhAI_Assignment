@@ -1,4 +1,4 @@
-"""Synthetic data bundles (clearly labelled synthetic; no real bundle was supplied).
+"""Synthetic data bundles (clearly labelled synthetic).
 
 A bundle follows the schema documented in README.md / data.py. Ground truth is written to a
 SEPARATE truth file that the fitting/prediction code never reads; only `evaluate` and the

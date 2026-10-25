@@ -11,12 +11,6 @@ with a verified finite-volume (FV) reference solver + weighted least squares (pr
 a constant-diffusivity baseline, and an inverse PINN (PyTorch), plus uncertainty, robustness,
 diagnosis and recovery studies. Report: [`report/report.pdf`](report/report.pdf).
 
-> **Data status.** Only the assignment PDF was received; the versioned data bundle and the Stage-4
-> diagnosis dataset were not attached (requested by email). Everything here runs on **synthetic**
-> bundles generated to the schema the brief describes, with ground truth stored separately and
-> used only for scoring. Every synthetic result is labelled as such. A real bundle in the documented
-> format (below) drops in with a one-line config change.
-
 ## Quick start (CPU only)
 
 ```bash
@@ -70,7 +64,7 @@ and the last step as `cd report; pdflatex report.tex; cd ..` (`&&` needs PowerSh
 Results land in `outputs/` (not committed); the copies cited by the report are committed under `results/`.
 
 **Agreed machine.** The brief's "agreed machine" was not specified; the reference laptop above is
-assumed (confirmation requested). The smoke run reports its own wall time and hardware.
+assumed. The smoke run reports its own wall time and hardware.
 
 **Focused checks required by the brief** (all in `pytest`):
 
